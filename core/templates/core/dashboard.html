@@ -1,0 +1,34 @@
+{% extends "core/base.html" %}
+
+{% block title %}Dashboard — Sabor e Gestão{% endblock %}
+
+{% block header %}Dashboard{% endblock %}
+
+{% block content %}
+  <div class="grid">
+    <section class="panel large">
+      <h3>Pedidos do dia</h3>
+      <div class="orders">
+        {% for p in pedidos %}
+        <div class="order-card status-{{ p.status|lower|slugify }}">
+          <div class="order-id">#{{ p.id }}</div>
+          <div class="order-client">{{ p.cliente }}</div>
+          <div class="order-info">{{ p.valor }} • Atraso: {{ p.atraso_min }} min</div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <aside class="panel small">
+      <h4>Clientes</h4>
+      <div class="clients">
+        {% for c in clientes %}
+        <div class="client-card">
+          <div class="client-name">{{ c.nome }}</div>
+          <div class="client-meta">Mais pedido: {{ c.mais_pedido }} • {{ c.tempo_medio }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </aside>
+  </div>
+{% endblock %}

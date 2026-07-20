@@ -1,0 +1,7 @@
+<ul style="list-style:none;padding:0;margin:0">
+{% for c in clients %}
+  <li style="padding:0.5rem;border-bottom:1px solid rgba(0,0,0,0.04)"> <strong>{{ c.nome }}</strong> — {{ c.telefone }}</li>
+{% empty %}
+  <li>Nenhum cliente cadastrado.</li>
+{% endfor %}
+</ul>

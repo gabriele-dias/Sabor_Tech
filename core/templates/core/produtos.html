@@ -1,0 +1,16 @@
+{% extends "core/base.html" %}
+
+{% block title %}Produtos — Sabor e Gestão{% endblock %}
+
+{% block header %}Produtos{% endblock %}
+
+{% block content %}
+  <div class="panel">
+    <h3>Produtos</h3>
+    <ul>
+      {% for p in produtos %}
+      <li>{{ p.nome }} — R$ {{ p.preco }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "core/base.html" %}
+
+{% block title %}Atendimento — Sabor e Gestão{% endblock %}
+
+{% block header %}Atendimento{% endblock %}
+
+{% block content %}
+  <div class="panel">
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <input id="q" name="q" placeholder="Pesquisar por cliente ou nº pedido" style="flex:1;padding:0.5rem;border-radius:6px;border:1px solid rgba(0,0,0,0.08)" />
+      <select id="statusFilter" style="padding:0.5rem;border-radius:6px;border:1px solid rgba(0,0,0,0.08)">
+        <option value="">Todos</option>
+        <option value="Pendente">Pendente</option>
+        <option value="Saiu para entrega">Saiu para entrega</option>
+        <option value="Atrasado">Atrasado</option>
+        <option value="Entregue">Entregue</option>
+      </select>
+      <button id="searchBtn" class="btn">Buscar</button>
+    </div>
+
+    <div style="margin-top:1rem">
+      <div id="ordersContainer" hx-get="/atendimento/orders/" hx-trigger="load" hx-swap="innerHTML">
+        <!-- orders partial will load here -->
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:1rem">
+    <h4>Clientes</h4>
+    <form hx-post="/atendimento/clients/add/" hx-target="#clientsList" hx-swap="innerHTML" onsubmit="return false;">
+      <label>NOME</label>
+      <input name="nome" required />
+      <label>TELEFONE</label>
+      <input name="telefone" />
+      <button type="submit" class="btn" style="margin-top:0.5rem">Adicionar Cliente</button>
+    </form>
+
+    <div id="clientsList" hx-get="/atendimento/clients/" hx-trigger="load" hx-swap="innerHTML" style="margin-top:0.75rem">
+      <!-- clients partial -->
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('searchBtn').addEventListener('click', function(){
+      const q = document.getElementById('q').value
+      const status = document.getElementById('statusFilter').value
+      const url = '/atendimento/orders/?q=' + encodeURIComponent(q) + '&status=' + encodeURIComponent(status)
+      htmx.ajax('GET', url, {target:'#ordersContainer', swap:'innerHTML'})
+    })
+  </script>
+
+{% endblock %}

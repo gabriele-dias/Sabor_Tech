@@ -1,0 +1,45 @@
+:root{
+  --bg: #F4F6F8;
+  --card: #FFFFFF;
+  --primary: #6B8EAE;
+  --primary-hover: #8FAECF;
+  --text: #1D2736;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter, system-ui, Arial, sans-serif;background:var(--bg);color:var(--text)}
+.app-shell{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--text);color:#fff;padding:1rem;display:flex;flex-direction:column}
+.sidebar .brand{font-weight:700;font-size:1.25rem;margin-bottom:1rem}
+.sidebar nav a{display:block;color:#fff;padding:0.5rem 0;text-decoration:none}
+.sidebar nav a:hover{background:rgba(255,255,255,0.04);padding-left:0.5rem}
+.sidebar-footer{margin-top:auto}
+.btn{background:var(--primary);color:#fff;padding:0.5rem 0.75rem;border:none;border-radius:6px;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid rgba(0,0,0,0.08);color:var(--text)}
+.main-area{flex:1}
+.main-header{background:transparent;padding:1rem 1.5rem;border-bottom:1px solid rgba(0,0,0,0.06)}
+.container{padding:1.5rem}
+.grid{display:grid;grid-template-columns:3fr 1fr;gap:1rem}
+.panel{overflow:hidden}
+.panel{background:var(--card);padding:1rem;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
+.large{min-height:320px}
+.small{min-height:320px}
+.orders{display:flex;flex-direction:column;gap:0.6rem}
+.order-card{padding:0.6rem;border-radius:6px;border:1px solid rgba(0,0,0,0.06);display:flex;justify-content:space-between}
+.order-card .order-id{font-weight:700}
+.order-card.status-atrasado{border-left:4px solid #e74c3c}
+.order-card.status-saiu-para-entrega{border-left:4px solid #f39c12}
+.order-card.status-pendente{border-left:4px solid var(--primary)}
+.client-card{padding:0.5rem;border-bottom:1px solid rgba(0,0,0,0.04)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center}
+.modal[aria-hidden="false"]{display:flex}
+.modal-dialog{background:var(--card);padding:1rem;border-radius:8px;min-width:320px}
+label{display:block;font-size:0.75rem;margin-top:0.5rem;color:rgba(0,0,0,0.6)}
+input{width:100%;padding:0.5rem;margin-top:0.25rem;border:1px solid rgba(0,0,0,0.08);border-radius:6px}
+
+@media (max-width: 900px){
+  .app-shell{flex-direction:column}
+  .sidebar{width:100%;display:flex;flex-direction:row;overflow:auto}
+  .sidebar nav{display:flex;gap:0.5rem}
+  .grid{grid-template-columns:1fr}
+  .main-header h2{font-size:1rem}
+}
