@@ -1,5 +1,16 @@
+from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render
 from django.utils import timezone
+
+
+def user_has_role(user, roles):
+	if not user.is_active:
+		return False
+	return user.groups.filter(name__in=roles).exists()
+
+
+def role_required(roles):
+	return user_passes_test(lambda u: user_has_role(u, roles), login_url='/login/')
 
 
 # Mock data stores (in-memory, for prototype only)
@@ -15,18 +26,21 @@ CLIENTS = [
 ]
 
 
+@role_required(['Gestão'])
 def index(request):
 	"""Página inicial que mostra exemplo de HTMx."""
 	now = timezone.now()
 	return render(request, "core/index.html", {"now": now})
 
 
+@role_required(['Gestão'])
 def time_partial(request):
 	"""Retorna apenas o fragmento de hora — usado por HTMx."""
 	now = timezone.now()
 	return render(request, "core/_time.html", {"now": now})
 
 
+@role_required(['Gestão'])
 def dashboard(request):
 	"""Dashboard principal com lista de pedidos e clientes (mock)."""
 	# Use mock stores for dashboard summary
@@ -38,11 +52,13 @@ def dashboard(request):
 	return render(request, "core/dashboard.html", {"pedidos": pedidos, "clientes": clientes})
 
 
+@role_required(['Gestão', 'Chefe de Cozinha'])
 def atendimento(request):
 	"""Página de atendimento (esqueleto)."""
 	return render(request, "core/atendimento.html", {"orders": ORDERS, "clients": CLIENTS})
 
 
+@role_required(['Gestão', 'Chefe de Cozinha'])
 def orders_partial(request):
 	"""Retorna o fragmento com a lista de pedidos, possivelmente filtrada."""
 	q = request.GET.get('q', '').lower()
@@ -55,6 +71,7 @@ def orders_partial(request):
 	return render(request, "core/_orders.html", {"orders": filtered})
 
 
+@role_required(['Gestão', 'Chefe de Cozinha'])
 def change_status(request):
 	"""Altera o status de um pedido (POST via HTMx) e retorna o fragmento atualizado."""
 	if request.method == 'POST':
@@ -67,10 +84,12 @@ def change_status(request):
 	return render(request, "core/_orders.html", {"orders": ORDERS})
 
 
+@role_required(['Gestão', 'Chefe de Cozinha'])
 def clients_partial(request):
 	return render(request, "core/_clients_list.html", {"clients": CLIENTS})
 
 
+@role_required(['Gestão', 'Chefe de Cozinha'])
 def add_client(request):
 	"""Adiciona cliente (POST via HTMx) e retorna a lista atualizada."""
 	if request.method == 'POST':
@@ -81,6 +100,7 @@ def add_client(request):
 	return render(request, "core/_clients_list.html", {"clients": CLIENTS})
 
 
+@role_required(['Gestão'])
 def clientes_page(request):
 	"""Lista de clientes (esqueleto)."""
 	clientes = [
@@ -90,6 +110,7 @@ def clientes_page(request):
 	return render(request, "core/clientes.html", {"clientes": clientes})
 
 
+@role_required(['Gestão'])
 def produtos_page(request):
 	"""Lista de produtos (esqueleto)."""
 	produtos = [
@@ -99,11 +120,13 @@ def produtos_page(request):
 	return render(request, "core/produtos.html", {"produtos": produtos})
 
 
+@role_required(['Gestão'])
 def relatorios(request):
 	"""Página de relatórios (esqueleto)."""
 	return render(request, "core/relatorios.html")
 
 
+@role_required(['Gestão'])
 def configuracoes(request):
 	"""Página de configurações/admin (esqueleto)."""
 	return render(request, "core/configuracoes.html")

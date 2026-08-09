@@ -20,7 +20,12 @@
           <a href="/configuracoes/">Configurações</a>
         </nav>
         <div class="sidebar-footer">
-          <button id="loginBtn" class="btn">Entrar</button>
+          {% if request.user.is_authenticated %}
+            <div class="user-info">{{ request.user.username }}</div>
+            <a href="{% url 'core:logout' %}" class="btn ghost">Sair</a>
+          {% else %}
+            <a href="{% url 'core:login' %}" class="btn">Entrar</a>
+          {% endif %}
         </div>
       </aside>
 

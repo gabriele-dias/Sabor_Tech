@@ -1,9 +1,12 @@
+from django.contrib.auth import views as auth_views
 from django.urls import path
 from . import views
 
 app_name = "core"
 
 urlpatterns = [
+    path("login/", auth_views.LoginView.as_view(template_name="core/login.html"), name="login"),
+    path("logout/", auth_views.LogoutView.as_view(next_page="/login/"), name="logout"),
     path("", views.dashboard, name="dashboard"),
     path("time/", views.time_partial, name="time_partial"),
     path("atendimento/orders/", views.orders_partial, name="orders_partial"),

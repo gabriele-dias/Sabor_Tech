@@ -1,0 +1,24 @@
+{% extends "core/base.html" %}
+
+{% block title %}Login — Sabor e Gestão{% endblock %}
+
+{% block content %}
+  <div class="panel centered">
+    <h1>Entrar</h1>
+    <form method="post" class="login-form">
+      {% csrf_token %}
+      <div class="field">
+        <label for="id_username">Usuário</label>
+        {{ form.username }}
+      </div>
+      <div class="field">
+        <label for="id_password">Senha</label>
+        {{ form.password }}
+      </div>
+      <button type="submit" class="btn">Entrar</button>
+      {% if form.non_field_errors %}
+        <div class="errors">{{ form.non_field_errors }}</div>
+      {% endif %}
+    </form>
+  </div>
+{% endblock %}
