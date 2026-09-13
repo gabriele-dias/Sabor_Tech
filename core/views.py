@@ -40,20 +40,6 @@ RECIPE = {
 
 
 @role_required(['Gestão'])
-def index(request):
-	"""Página inicial que mostra exemplo de HTMx."""
-	now = timezone.now()
-	return render(request, "core/index.html", {"now": now})
-
-
-@role_required(['Gestão'])
-def time_partial(request):
-	"""Retorna apenas o fragmento de hora — usado por HTMx."""
-	now = timezone.now()
-	return render(request, "core/_time.html", {"now": now})
-
-
-@role_required(['Gestão'])
 def dashboard(request):
 	"""Dashboard com filtro por período e médias diárias de desempenho."""
 	today = timezone.localdate()

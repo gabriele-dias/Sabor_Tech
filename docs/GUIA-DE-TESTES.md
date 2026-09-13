@@ -87,7 +87,6 @@ A funcionalidade será construída em etapas pequenas:
 - `core/views.py`: preparar os dados do cálculo para o dashboard.
 - `core/templates/core/dashboard.html`: exibir o total ou a calculadora.
 - `core/static/core/css/app.css`: estilizar o novo componente.
-- `core/static/core/js/app.js`: controlar interações feitas no navegador.
 - `core/tests.py`: adicionar testes automatizados.
 
 As alterações não devem ser feitas em todos esses arquivos de uma vez. Cada etapa deve ser pequena e validada antes da próxima.

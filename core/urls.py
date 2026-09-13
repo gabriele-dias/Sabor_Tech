@@ -13,7 +13,6 @@ urlpatterns = [
     ),
     path("logout/", auth_views.LogoutView.as_view(next_page="/login/"), name="logout"),
     path("", views.dashboard, name="dashboard"),
-    path("time/", views.time_partial, name="time_partial"),
     path("atendimento/orders/", views.orders_partial, name="orders_partial"),
     path("atendimento/change_status/", views.change_status, name="change_status"),
     path("atendimento/clients/", views.clients_partial, name="clients_partial"),
