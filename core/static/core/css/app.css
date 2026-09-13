@@ -167,16 +167,42 @@ body{margin:0;font-family:Inter, system-ui, Arial, sans-serif;background:var(--b
 }
 .grid{display:grid;grid-template-columns:3fr 1fr;gap:1rem}
 .dashboard-grid{margin-bottom:1.25rem}
+.dashboard-filters{display:flex;align-items:end;gap:1rem;margin-bottom:1rem;padding:1rem;background:var(--card);border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
+.filter-group{display:flex;flex-direction:column;gap:0.4rem}
+.filter-group label{font-size:0.82rem;font-weight:600;color:#3a3d42}
+.filter-group input{width:220px;padding:0.7rem 0.8rem;border:1px solid var(--line);border-radius:7px;background:#fff}
+.summary-grid{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:1rem;margin-bottom:1.25rem}
+.metric-card{background:var(--card);padding:1rem;border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,0.04);display:flex;flex-direction:column;gap:0.4rem}
+.metric-card.accent{background:var(--primary-soft);border:1px solid rgba(10,141,134,0.12)}
+.metric-label{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)}
+.metric-card strong{font-size:1.5rem}
 .panel{overflow:hidden}
 .panel{background:var(--card);padding:1rem;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
 .large{min-height:320px}
 .small{min-height:320px}
+.panel-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+.date-pill{display:inline-block;padding:0.35rem 0.7rem;background:#eef7f5;color:var(--primary-dark);font-size:0.72rem;font-weight:700;border-radius:999px}
 .orders{display:flex;flex-direction:column;gap:0.6rem}
 .order-card{padding:0.6rem;border-radius:6px;border:1px solid rgba(0,0,0,0.06);display:flex;justify-content:space-between}
 .order-card .order-id{font-weight:700}
 .order-card.status-atrasado{border-left:4px solid #e74c3c}
 .order-card.status-saiu-para-entrega{border-left:4px solid #f39c12}
 .order-card.status-pendente{border-left:4px solid var(--primary)}
+.client-card{padding:0.5rem;border-bottom:1px solid rgba(0,0,0,0.04)}
+.pricing-panel{padding:1.25rem;margin-bottom:1.25rem}
+.pricing-table{display:flex;flex-direction:column;gap:0.5rem}
+.pricing-header, .pricing-row{display:grid;grid-template-columns:1.1fr 1.5fr 1fr 1fr 1fr;gap:0.75rem;align-items:center;padding:0.75rem 0.65rem;border-bottom:1px solid rgba(0,0,0,0.05)}
+.pricing-header{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);font-weight:700}
+.pricing-row{font-size:0.95rem}
+.pricing-row .profit{color:#0a8d86;font-weight:700}
+.recipe-panel{padding:1.25rem;margin-bottom:1.25rem}
+.recipe-title{display:flex;align-items:baseline;gap:0.75rem;padding:0.8rem 0;border-bottom:1px solid var(--line)}
+.recipe-title span{color:var(--muted);font-size:0.85rem}
+.recipe-title strong{font-size:1.2rem}
+.recipe-ingredients{margin-top:1rem;max-width:620px}
+.recipe-ingredients h4{margin:0 0 0.5rem;font-size:0.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em}
+.recipe-ingredient{display:flex;gap:0.75rem;padding:0.65rem 0;border-bottom:1px solid rgba(0,0,0,0.05)}
+.recipe-ingredient strong{min-width:100px;color:var(--primary-dark)}
 .client-card{padding:0.5rem;border-bottom:1px solid rgba(0,0,0,0.04)}
 .calculator-panel{padding:1.25rem}
 .calculator-header{margin-bottom:1rem}
@@ -188,6 +214,19 @@ body{margin:0;font-family:Inter, system-ui, Arial, sans-serif;background:var(--b
 .field-group input{width:100%;padding:0.7rem 0.8rem;border:1px solid var(--line);border-radius:7px;background:#fff}
 .calculator-btn{width:fit-content;min-width:180px;padding:0.75rem 1.2rem}
 .calculator-error{margin-top:1rem;padding:0.7rem 0.9rem;border-radius:8px;background:#fdecec;color:#a9292a;font-size:0.9rem}
+.recipe-success{margin-top:1rem;padding:0.7rem 0.9rem;border-radius:8px;background:#e7f7ef;color:#16734b;font-size:0.9rem}
+.recipe-list{margin-top:1.5rem;border-top:1px solid var(--line)}
+.recipe-list-header,.recipe-list-row{display:grid;grid-template-columns:2fr 1fr;gap:1rem;padding:0.75rem 0;border-bottom:1px solid rgba(0,0,0,0.05)}
+.recipe-list-header{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);font-weight:700}
+.recipe-list-row span{color:var(--primary-dark);font-weight:700}
+.empty-state{color:var(--muted);font-size:0.9rem}
+.ingredients-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:0.5rem}
+.add-ingredient{padding:0.55rem 0.8rem;font-size:0.82rem}
+.ingredients-list{display:flex;flex-direction:column;gap:0.6rem}
+.ingredient-row{display:grid;grid-template-columns:2fr 1fr 0.8fr auto;gap:0.6rem;align-items:center}
+.ingredient-row input,.ingredient-row select{width:100%;padding:0.7rem 0.8rem;border:1px solid var(--line);border-radius:7px;background:#fff}
+.remove-ingredient{border:0;background:transparent;color:#a9292a;cursor:pointer;font-size:0.8rem}
+.ingredient-summary{margin-top:0.3rem;color:var(--muted);font-size:0.82rem}
 .calculator-result{margin-top:1.25rem;display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:0.75rem}
 .result-item{padding:0.9rem 1rem;border-radius:10px;background:#f2f7f6;border:1px solid rgba(10,141,134,0.12);display:flex;flex-direction:column;gap:0.35rem}
 .result-item span{font-size:0.8rem;color:var(--muted)}
@@ -198,6 +237,22 @@ body{margin:0;font-family:Inter, system-ui, Arial, sans-serif;background:var(--b
 .modal-dialog{background:var(--card);padding:1rem;border-radius:8px;min-width:320px}
 label{display:block;font-size:0.75rem;margin-top:0.5rem;color:rgba(0,0,0,0.6)}
 input{width:100%;padding:0.5rem;margin-top:0.25rem;border:1px solid rgba(0,0,0,0.08);border-radius:6px}
+
+@media (max-width: 900px){
+  .app-shell{flex-direction:column}
+  .sidebar{width:100%;display:flex;flex-direction:row;overflow:auto}
+  .sidebar nav{display:flex;gap:0.5rem}
+  .grid{grid-template-columns:1fr}
+  .summary-grid{grid-template-columns:1fr}
+  .field-row{grid-template-columns:1fr}
+  .pricing-header{display:none}
+  .pricing-row{grid-template-columns:1fr 1fr;}
+  .main-header h2{font-size:1rem}
+  .login-card{grid-template-columns:1fr;max-width:520px}
+  .login-intro{min-height:260px;padding:2rem 1.5rem}
+  .login-panel{padding:2.5rem 2rem}
+  .login-intro h1{font-size:2.2rem}
+}
 
 @media (max-width: 900px){
   .app-shell{flex-direction:column}

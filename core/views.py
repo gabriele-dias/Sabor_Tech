@@ -1,10 +1,7 @@
-from decimal import Decimal, InvalidOperation
-
+from datetime import date
 from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render
 from django.utils import timezone
-
-from .calculations import calculate_receita
 
 
 def user_has_role(user, roles):
@@ -19,15 +16,27 @@ def role_required(roles):
 
 # Mock data stores (in-memory, for prototype only)
 ORDERS = [
-	{"id": 101, "cliente": "João Silva", "status": "Pendente", "atraso_min": 12, "valor": 45.50},
-	{"id": 102, "cliente": "Maria Costa", "status": "Saiu para entrega", "atraso_min": 3, "valor": 67.00},
-	{"id": 103, "cliente": "Pedro Alves", "status": "Atrasado", "atraso_min": 27, "valor": 32.00},
+	{"id": 101, "cliente": "João Silva", "status": "Pendente", "atraso_min": 12, "valor": 45.50, "data": "2026-09-13", "custo_receita": 18.50, "lucro": 27.00},
+	{"id": 102, "cliente": "Maria Costa", "status": "Saiu para entrega", "atraso_min": 3, "valor": 67.00, "data": "2026-09-12", "custo_receita": 24.80, "lucro": 42.20},
+	{"id": 103, "cliente": "Pedro Alves", "status": "Atrasado", "atraso_min": 27, "valor": 32.00, "data": "2026-09-13", "custo_receita": 13.00, "lucro": 19.00},
 ]
 
 CLIENTS = [
 	{"id": 1, "nome": "João Silva", "telefone": "(11) 99999-0001"},
 	{"id": 2, "nome": "Maria Costa", "telefone": "(11) 98888-1111"},
 ]
+
+RECIPE = {
+	"nome": "Pizza",
+	"sabor": "Marguerita",
+	"ingredientes": [
+		{"quantidade": "1", "unidade": "kg", "nome": "farinha de trigo"},
+		{"quantidade": "3", "unidade": "unidades", "nome": "tomate"},
+		{"quantidade": "1/2", "unidade": "L", "nome": "óleo"},
+		{"quantidade": "500", "unidade": "g", "nome": "muçarela"},
+		{"quantidade": "a gosto", "unidade": "", "nome": "manjericão e sal"},
+	]
+}
 
 
 @role_required(['Gestão'])
@@ -46,37 +55,47 @@ def time_partial(request):
 
 @role_required(['Gestão'])
 def dashboard(request):
-	"""Dashboard principal com lista de pedidos, clientes e cálculo de receita."""
-	pedidos = ORDERS
+	"""Dashboard com filtro por período e médias diárias de desempenho."""
+	today = timezone.localdate()
+	date_start_value = request.GET.get("date_start") or request.GET.get("date") or today.isoformat()
+	date_end_value = request.GET.get("date_end") or date_start_value
+	try:
+		date_start = date.fromisoformat(date_start_value)
+		date_end = date.fromisoformat(date_end_value)
+	except ValueError:
+		date_start = date_end = today
+	if date_start > date_end:
+		date_start, date_end = date_end, date_start
+	date_start_value = date_start.isoformat()
+	date_end_value = date_end.isoformat()
+
+	pedidos = [
+		p for p in ORDERS
+		if date_start <= date.fromisoformat(p["data"]) <= date_end
+	]
+
 	clientes = [
 		{"nome": c["nome"], "mais_pedido": "Margherita", "tempo_medio": "30m"} for c in CLIENTS
 	]
 
-	calculo = None
-	form_data = {"quantidade_por_pessoa": "0.40", "pessoas": "30", "custo_unitario": "8.50"}
-	error_message = None
-
-	if request.method == "POST":
-		form_data = {
-			"quantidade_por_pessoa": request.POST.get("quantidade_por_pessoa", "0.40"),
-			"pessoas": request.POST.get("pessoas", "30"),
-			"custo_unitario": request.POST.get("custo_unitario", "8.50"),
-		}
-		try:
-			calculo = calculate_receita(
-				Decimal(form_data["quantidade_por_pessoa"]),
-				int(form_data["pessoas"]),
-				Decimal(form_data["custo_unitario"]),
-			)
-		except (InvalidOperation, TypeError, ValueError):
-			error_message = "Informe valores válidos para quantidade, pessoas e custo unitário."
+	total_vendas = sum(float(p["valor"]) for p in pedidos)
+	valor_custo = sum(float(p["custo_receita"]) for p in pedidos)
+	lucro_total = sum(float(p["lucro"]) for p in pedidos)
+	period_days = (date_end - date_start).days + 1
 
 	return render(request, "core/dashboard.html", {
 		"pedidos": pedidos,
 		"clientes": clientes,
-		"calculo": calculo,
-		"form_data": form_data,
-		"error_message": error_message,
+		"date_start": date_start_value,
+		"date_end": date_end_value,
+		"period_days": period_days,
+		"total_vendas": total_vendas,
+		"valor_custo": valor_custo,
+		"lucro_total": lucro_total,
+		"receita": RECIPE,
+		"media_vendas": total_vendas / period_days,
+		"media_custo": valor_custo / period_days,
+		"media_lucro": lucro_total / period_days,
 	})
 
 

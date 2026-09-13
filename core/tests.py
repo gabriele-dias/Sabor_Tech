@@ -69,17 +69,45 @@ class OrderCalculationTests(TestCase):
         self.assertEqual(dados["custo_total"], Decimal("102.00"))
         self.assertEqual(dados["custo_por_pessoa"], Decimal("3.40"))
 
-    def test_dashboard_calculator_returns_recipe_total(self):
+    def test_dashboard_hides_recipe_tools(self):
         user = User.objects.create_user(username="gestor", password="123456")
         group, _ = Group.objects.get_or_create(name="Gestão")
         user.groups.add(group)
         self.client.force_login(user)
 
-        response = self.client.post(
+        response = self.client.get(reverse("core:dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Adicionar receita")
+        self.assertNotContains(response, "Calcular custo")
+
+    def test_dashboard_filters_orders_by_selected_date(self):
+        user = User.objects.create_user(username="gestor2", password="123456")
+        group, _ = Group.objects.get_or_create(name="Gestão")
+        user.groups.add(group)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("core:dashboard"), {"date_start": "2026-09-12", "date_end": "2026-09-12"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Pedidos do período")
+        self.assertContains(response, "Maria Costa")
+        self.assertContains(response, "Precificação por pedido")
+
+    def test_dashboard_calculates_period_averages(self):
+        user = User.objects.create_user(username="gestor3", password="123456")
+        group, _ = Group.objects.get_or_create(name="Gestão")
+        user.groups.add(group)
+        self.client.force_login(user)
+
+        response = self.client.get(
             reverse("core:dashboard"),
-            {"quantidade_por_pessoa": "0.40", "pessoas": "30", "custo_unitario": "8.50"},
+            {"date_start": "2026-09-12", "date_end": "2026-09-13"},
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Custo total")
-        self.assertContains(response, "R$ 102,00")
+        self.assertEqual(response.context["period_days"], 2)
+        self.assertEqual(response.context["total_vendas"], 144.5)
+        self.assertEqual(response.context["media_vendas"], 72.25)
+        self.assertContains(response, "Pizza Marguerita")
+        self.assertContains(response, "farinha de trigo")
