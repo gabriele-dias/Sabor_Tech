@@ -1,6 +1,6 @@
-# Sabor e Gestão
+# Sabor Tech
 
-Sistema de gestão web para o restaurante/empresa Sabor e Gestão, desenvolvido com Django, templates e HTMx para fluxo de dashboard/atendimento.
+Sistema de gestão web para o restaurante/empresa Sabor Tech, desenvolvido com Django, templates e HTMx para fluxo de dashboard/atendimento.
 
 ## Visão geral
 

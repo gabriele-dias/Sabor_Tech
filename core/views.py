@@ -1,6 +1,10 @@
+from decimal import Decimal, InvalidOperation
+
 from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import render
 from django.utils import timezone
+
+from .calculations import calculate_receita
 
 
 def user_has_role(user, roles):
@@ -42,14 +46,38 @@ def time_partial(request):
 
 @role_required(['Gestão'])
 def dashboard(request):
-	"""Dashboard principal com lista de pedidos e clientes (mock)."""
-	# Use mock stores for dashboard summary
+	"""Dashboard principal com lista de pedidos, clientes e cálculo de receita."""
 	pedidos = ORDERS
 	clientes = [
 		{"nome": c["nome"], "mais_pedido": "Margherita", "tempo_medio": "30m"} for c in CLIENTS
 	]
 
-	return render(request, "core/dashboard.html", {"pedidos": pedidos, "clientes": clientes})
+	calculo = None
+	form_data = {"quantidade_por_pessoa": "0.40", "pessoas": "30", "custo_unitario": "8.50"}
+	error_message = None
+
+	if request.method == "POST":
+		form_data = {
+			"quantidade_por_pessoa": request.POST.get("quantidade_por_pessoa", "0.40"),
+			"pessoas": request.POST.get("pessoas", "30"),
+			"custo_unitario": request.POST.get("custo_unitario", "8.50"),
+		}
+		try:
+			calculo = calculate_receita(
+				Decimal(form_data["quantidade_por_pessoa"]),
+				int(form_data["pessoas"]),
+				Decimal(form_data["custo_unitario"]),
+			)
+		except (InvalidOperation, TypeError, ValueError):
+			error_message = "Informe valores válidos para quantidade, pessoas e custo unitário."
+
+	return render(request, "core/dashboard.html", {
+		"pedidos": pedidos,
+		"clientes": clientes,
+		"calculo": calculo,
+		"form_data": form_data,
+		"error_message": error_message,
+	})
 
 
 @role_required(['Gestão', 'Chefe de Cozinha'])

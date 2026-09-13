@@ -1,11 +1,11 @@
 {% extends "core/base.html" %}
 
-{% block title %}Dashboard — Sabor e Gestão{% endblock %}
+{% block title %}Dashboard — Sabor Tech{% endblock %}
 
 {% block header %}Dashboard{% endblock %}
 
 {% block content %}
-  <div class="grid">
+  <div class="grid dashboard-grid">
     <section class="panel large">
       <h3>Pedidos do dia</h3>
       <div class="orders">
@@ -31,4 +31,56 @@
       </div>
     </aside>
   </div>
+
+  <section class="panel calculator-panel">
+    <div class="calculator-header">
+      <div>
+        <p class="eyebrow">Calculadora</p>
+        <h3>Custo da receita</h3>
+      </div>
+    </div>
+
+    <form method="post" class="calculator-form">
+      {% csrf_token %}
+      <div class="field-row">
+        <div class="field-group">
+          <label for="quantidade_por_pessoa">Quantidade por pessoa</label>
+          <input id="quantidade_por_pessoa" name="quantidade_por_pessoa" type="number" step="0.01" value="{{ form_data.quantidade_por_pessoa }}" />
+        </div>
+
+        <div class="field-group">
+          <label for="pessoas">Pessoas</label>
+          <input id="pessoas" name="pessoas" type="number" min="1" value="{{ form_data.pessoas }}" />
+        </div>
+
+        <div class="field-group">
+          <label for="custo_unitario">Custo unitário</label>
+          <input id="custo_unitario" name="custo_unitario" type="number" step="0.01" value="{{ form_data.custo_unitario }}" />
+        </div>
+      </div>
+
+      <button type="submit" class="btn calculator-btn">Calcular</button>
+    </form>
+
+    {% if error_message %}
+      <div class="calculator-error">{{ error_message }}</div>
+    {% endif %}
+
+    {% if calculo %}
+      <div class="calculator-result">
+        <div class="result-item">
+          <span>Total de insumo</span>
+          <strong>{{ calculo.total_insumo|floatformat:2 }} kg</strong>
+        </div>
+        <div class="result-item">
+          <span>Custo total</span>
+          <strong>R$ {{ calculo.custo_total|floatformat:2 }}</strong>
+        </div>
+        <div class="result-item highlight">
+          <span>Custo por pessoa</span>
+          <strong>R$ {{ calculo.custo_por_pessoa|floatformat:2 }}</strong>
+        </div>
+      </div>
+    {% endif %}
+  </section>
 {% endblock %}

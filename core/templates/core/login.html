@@ -3,28 +3,55 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Login — Sabor e Gestão</title>
+    <title>Login — Sabor Tech</title>
     <link rel="stylesheet" href="/static/core/css/app.css">
   </head>
   <body class="login-page">
     <main class="login-card">
-      <div class="login-brand">Sabor e Gestão</div>
-      <h1>Entrar</h1>
-      <form method="post" class="login-form">
-        {% csrf_token %}
-        <div class="field">
-          <label for="id_username">Usuário</label>
-          {{ form.username }}
+      <section class="login-intro">
+        <div class="login-brand">
+          <span class="brand-mark">◉</span>
+          <span>Sabor Tech</span>
         </div>
-        <div class="field">
-          <label for="id_password">Senha</label>
-          {{ form.password }}
+        <div class="login-intro-content">
+          <h1>Gestão mais simples.<br>Restaurante mais eficiente.</h1>
+          <p>Controle seus pedidos, mesas e operações em um único lugar.</p>
         </div>
-        <button type="submit" class="btn">Entrar</button>
-        {% if form.non_field_errors %}
-          <div class="errors">{{ form.non_field_errors }}</div>
-        {% endif %}
-      </form>
+      </section>
+
+      <section class="login-panel">
+        <p class="login-eyebrow">Bem-vindo(a)</p>
+        <h2>Entrar na sua conta</h2>
+        <p class="login-description">Acesse o sistema para gerenciar seu restaurante.</p>
+
+        <form method="post" class="login-form">
+          {% csrf_token %}
+
+          <div class="field">
+            <label for="{{ form.username.id_for_label }}">E-mail</label>
+            {{ form.username }}
+          </div>
+
+          <div class="field field-password">
+            <div class="field-heading">
+              <label for="{{ form.password.id_for_label }}">Senha</label>
+              <a href="#">Esqueci minha senha</a>
+            </div>
+            {{ form.password }}
+          </div>
+
+          <button type="submit" class="btn">
+            <span>Entrar</span>
+            <span aria-hidden="true">→</span>
+          </button>
+
+          {% if form.non_field_errors %}
+            <div class="errors">{{ form.non_field_errors }}</div>
+          {% endif %}
+        </form>
+
+        <p class="login-access">Não possui uma conta? <a href="#">Solicite seu acesso</a></p>
+      </section>
     </main>
   </body>
 </html>
