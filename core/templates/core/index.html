@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}
+
+{% block title %}Início — Sabor e Gestão{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <p>Exemplo simples usando <strong>HTMx</strong>. Hora atual do servidor:</p>
+    <div id="time-container">
+      {% include "core/_time.html" %}
+    </div>
+    <p>
+      <button hx-get="/time/" hx-target="#time-container" hx-swap="innerHTML">Atualizar hora (HTMx)</button>
+    </p>
+  </div>
+{% endblock %}

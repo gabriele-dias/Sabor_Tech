@@ -1,0 +1,24 @@
+{% for o in orders %}
+  <div class="order-card" style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem;margin-bottom:0.5rem;border-radius:6px;border:1px solid rgba(0,0,0,0.06)">
+    <div>
+      <div style="font-weight:700">#{{ o.id }} — {{ o.cliente }}</div>
+      <div style="font-size:0.9rem;color:rgba(0,0,0,0.6)">R$ {{ o.valor }} • Atraso: {{ o.atraso_min }} min</div>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <div style="font-size:0.9rem">{{ o.status }}</div>
+      <form hx-post="/atendimento/change_status/" hx-target="#ordersContainer" hx-swap="innerHTML" style="display:inline">
+        <input type="hidden" name="order_id" value="{{ o.id }}" />
+        <select name="new_status">
+          <option value="Pendente">Pendente</option>
+          <option value="Saiu para entrega">Saiu para entrega</option>
+          <option value="Entregue">Entregue</option>
+          <option value="Cancelado">Cancelado</option>
+          <option value="Atrasado">Atrasado</option>
+        </select>
+        <button type="submit" class="btn">Alterar</button>
+      </form>
+    </div>
+  </div>
+{% empty %}
+  <div>Nenhum pedido encontrado.</div>
+{% endfor %}

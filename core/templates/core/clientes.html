@@ -1,0 +1,16 @@
+{% extends "core/base.html" %}
+
+{% block title %}Clientes — Sabor e Gestão{% endblock %}
+
+{% block header %}Clientes{% endblock %}
+
+{% block content %}
+  <div class="panel">
+    <h3>Lista de Clientes</h3>
+    <ul>
+      {% for c in clientes %}
+      <li>{{ c.nome }} — {{ c.telefone }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}
