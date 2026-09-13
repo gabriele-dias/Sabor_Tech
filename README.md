@@ -1,80 +1,104 @@
 # Sabor Tech
 
-Sistema de gestão web para o restaurante/empresa Sabor e Gestão, desenvolvido com Django, templates e HTMx para fluxo de dashboard/atendimento.
+Sistema de gestão para restaurantes, com foco em operação interna, dashboard, atendimento e cálculo de custos.
 
 ## Visão geral
 
-Este repositório está em evolução para uma aplicação de operações internas com áreas como dashboard de gestão, atendimento, cadastro de clientes, filtros de pedidos, relatórios e administração de acesso.
+O Sabor Tech é uma aplicação web em Django para apoiar a gestão de restaurante com fluxos de:
+
+- dashboard operacional;
+- atendimento e pedidos;
+- clientes e produtos;
+- relatórios e KPIs;
+- login e controles por perfil de acesso.
+
+A solução está em evolução para se tornar uma plataforma completa de gestão, com base visual funcional e arquitetura pronta para expansão.
 
 ## Status atual
 
-A base atual do projeto já está organizada com:
+O projeto já conta com:
 
-- Aplicação principal `core` com templates e views de navegação.
-- Login visual em [core/templates/core/login.html](core/templates/core/login.html).
-- Regras de acesso por grupo com `@role_required(...)` em [core/views.py](core/views.py).
-- Rotas autenticadas e de login em [core/urls.py](core/urls.py).
-- Migração de criação de grupos de acesso em [core/migrations/0002_create_roles.py](core/migrations/0002_create_roles.py).
-- Configuração inicial do Django em [setup/settings.py](setup/settings.py).
-- Testes básicos de regressão em [core/tests.py](core/tests.py).
+- aplicação principal em Django;
+- login customizado com identidade visual da marca;
+- controle de acesso por grupos de usuários;
+- templates para dashboard, atendimento, clientes, produtos e relatórios;
+- rotas autenticadas e fluxo de navegação principal;
+- lógica de cálculo de receita/custo com testes automatizados;
+- estrutura inicial para evolução para persistência real em banco de dados.
 
-## Branch ativa
-
-O trabalho atual está sendo realizado na branch:
-
-```bash
-feature/Versão_0.1
-```
-
-Também já existe o tracking com o remoto:
-
-```bash
-git push -u origin feature/Versão_0.1
-```
-
-## Tecnologias
+## Stack tecnológica
 
 - Python 3.13
 - Django
 - SQLite
 - Django Templates
 - HTMx
-- Git / GitHub
+- Git e GitHub
+
+## Estrutura do projeto
+
+```text
+Sabor_e_gestao/
+├── core/
+│   ├── static/
+│   ├── templates/
+│   ├── migrations/
+│   ├── calculations.py
+│   ├── forms.py
+│   ├── tests.py
+│   ├── urls.py
+│   └── views.py
+├── docs/
+├── setup/
+├── manage.py
+├── README.md
+├── db.sqlite3
+├── .gitignore
+└── .venv/
+```
+
+## Branch ativa
+
+```bash
+feature/Versão_0.1
+```
 
 ## Requisitos
 
-- Python 3.10+ (recomendado 3.13)
+- Python 3.10+
 - Ambiente virtual
-- Projeto no GitHub
+- Git
 - Django instalado no ambiente
 
-## Como abrir o ambiente virtual
+## Como configurar o ambiente
 
-### Git Bash / Bash
-
-```bash
-source .venv/Scripts/activate
-```
-
-### PowerShell
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-### CMD
-
-```cmd
-.venv\Scripts\activate.bat
-```
-
-Se o ambiente virtual ainda não existir, crie-o com:
+### Criar ambiente virtual
 
 ```bash
 python -m venv .venv
 ```
 
-## Configuração local
+### Ativar ambiente virtual
+
+#### Git Bash / Bash
+
+```bash
+source .venv/Scripts/activate
+```
+
+#### PowerShell
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+#### CMD
+
+```cmd
+.venv\Scripts\activate.bat
+```
+
+## Como rodar localmente
 
 ```bash
 python -m pip install --upgrade pip
@@ -83,25 +107,17 @@ python manage.py test
 python manage.py runserver
 ```
 
-## Como executar
-
-No projeto, com o `.venv` ativado:
-
-```bash
-python manage.py runserver
-```
-
 Acesse:
 
-- Aplicação principal: http://127.0.0.1:8000/
+- Dashboard: http://127.0.0.1:8000/
 - Login: http://127.0.0.1:8000/login/
 - Administração: http://127.0.0.1:8000/admin/
 
 ## Observações importantes
 
-- O diretório `.venv` é local e não deve ser enviado para o GitHub.
-- Ele está listado em [.gitignore](.gitignore).
-- A aplicação ainda usa dados mock para protótipo em [core/views.py](core/views.py).
+- O diretório `.venv` foi incluído em [.gitignore](.gitignore) e não deve ser versionado.
+- A aplicação ainda usa dados mock para protótipo, principalmente em [core/views.py](core/views.py).
+- A estrutura atual foi pensada para evoluir para persistência real com modelos de clientes, produtos e pedidos.
 
 ## Fluxo de desenvolvimento
 
@@ -114,9 +130,13 @@ git push origin feature/Versão_0.1
 
 ## Próximos passos
 
-- Implementar persistência de pedidos/clientes/produtos com modelos reais.
-- Expandir o painel com autenticação e grupos/funções de negócio.
-- Criar testes de integração para as páginas principais.
-- Preparar estrutura final de deployment.
+- migrar dados mock para modelos reais do Django;
+- criar cadastros de produtos, clientes e pedidos persistentes;
+- ampliar a lógica de relatórios e KPIs;
+- melhorar autenticação e permissões por perfil;
+- adicionar testes de integração para páginas e fluxos principais;
+- preparar a aplicação para deploy.
 
-Este README acompanha o estado atual da branch de desenvolvimento e será atualizado conforme os próximos ciclos forem concluídos.
+## Conclusão
+
+Este README acompanha a fase atual do projeto e será atualizado conforme a plataforma evolui para uma solução completa de gestão para restaurantes.

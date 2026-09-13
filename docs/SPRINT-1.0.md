@@ -2,7 +2,7 @@
 
 ## Resumo
 
-- Objetivo: criar a base visual e a estrutura de acesso da plataforma Sabor e Gestão.
+- Objetivo: criar a base visual e a estrutura de acesso da plataforma Sabor Tech.
 - Branch ativa: `feature/Versão_0.1`.
 - Escopo atual: dashboard, atendimento, clientes, produtos, relatórios, configurações, login e proteção por permissões por grupo.
 
