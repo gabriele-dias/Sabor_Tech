@@ -1,9 +1,9 @@
 :root{
   --bg: #f4f4f2;
   --card: #f7f7f5;
-  --primary: #0a8d86;
-  --primary-dark: #06736f;
-  --primary-soft: #dff5f2;
+  --primary: #c84630;
+  --primary-dark: #8e2f25;
+  --primary-soft: #f8d8c7;
   --text: #1b1c1e;
   --muted: #70737a;
   --line: #d7d9db;
@@ -44,7 +44,7 @@ body{margin:0;font-family:Inter, system-ui, Arial, sans-serif;background:var(--b
   display:flex;
   flex-direction:column;
   padding:2.5rem 2.2rem 2rem;
-  background:linear-gradient(180deg, #0f9b93 0%, #0a7d7a 100%);
+  background:linear-gradient(150deg, #a73529 0%, #e47b32 100%);
   color:#fff;
 }
 .login-brand{
@@ -148,7 +148,7 @@ body{margin:0;font-family:Inter, system-ui, Arial, sans-serif;background:var(--b
   justify-content:space-between;
   width:100%;
   padding:0.95rem 1.05rem;
-  background:linear-gradient(180deg, #0da29b 0%, #0a8d86 100%);
+  background:linear-gradient(150deg, #c84630 0%, #a73529 100%);
   border-radius:8px;
   font-weight:700;
   font-size:1rem;
@@ -157,7 +157,7 @@ body{margin:0;font-family:Inter, system-ui, Arial, sans-serif;background:var(--b
   cursor:pointer;
   box-shadow:0 8px 18px rgba(10,141,134,0.25);
 }
-.login-form .btn:hover{background:linear-gradient(180deg, #0b968e 0%, #0a7d7a 100%)}
+.login-form .btn:hover{background:linear-gradient(150deg, #a73529 0%, #8e2f25 100%)}
 .errors{color:#b42318;font-size:0.875rem}
 .login-access{
   margin:2rem 0 0;
@@ -194,7 +194,7 @@ body{margin:0;font-family:Inter, system-ui, Arial, sans-serif;background:var(--b
 .pricing-header, .pricing-row{display:grid;grid-template-columns:1.1fr 1.5fr 1fr 1fr 1fr;gap:0.75rem;align-items:center;padding:0.75rem 0.65rem;border-bottom:1px solid rgba(0,0,0,0.05)}
 .pricing-header{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);font-weight:700}
 .pricing-row{font-size:0.95rem}
-.pricing-row .profit{color:#0a8d86;font-weight:700}
+.pricing-row .profit{color:#c84630;font-weight:700}
 .recipe-panel{padding:1.25rem;margin-bottom:1.25rem}
 .recipe-title{display:flex;align-items:baseline;gap:0.75rem;padding:0.8rem 0;border-bottom:1px solid var(--line)}
 .recipe-title span{color:var(--muted);font-size:0.85rem}
