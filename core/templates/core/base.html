@@ -3,21 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{% block title %}Sabor Tech{% endblock %}</title>
+    <title>{% block title %}Cardápio e seus valores{% endblock %}</title>
     <link rel="stylesheet" href="/static/core/css/app.css">
     <script src="https://unpkg.com/htmx.org@1.10.0"></script>
   </head>
   <body>
     <div class="app-shell">
       <aside class="sidebar">
-        <div class="brand">Sabor Tech</div>
+        <div class="brand"><span class="brand-mark">+</span> Cardápio <em>e seus valores</em></div>
         <nav>
-          <a href="/">Dashboard</a>
-          <a href="/atendimento/">Atendimento</a>
-          <a href="/clientes/">Clientes</a>
-          <a href="/produtos/">Produtos</a>
-          <a href="/relatorios/">Relatórios</a>
-          <a href="/configuracoes/">Configurações</a>
+          <a class="active" href="/">[ ] <span>Menu principal</span></a>
+          <a href="/atendimento/">[+] <span>Atendimento</span></a>
+          <a href="/produtos/">[#] <span>Insumos e produtos</span></a>
+          <a href="/relatorios/">[%] <span>Relatórios</span></a>
+          <a href="/configuracoes/">[=] <span>Configurações</span></a>
         </nav>
         <div class="sidebar-footer">
           {% if request.user.is_authenticated %}
@@ -40,26 +39,5 @@
       </div>
     </div>
 
-    <!-- Login modal (simples) -->
-    <div id="loginModal" class="modal" aria-hidden="true">
-      <div class="modal-dialog">
-        <h3>Login</h3>
-        <form id="loginForm">
-          <label>EMPRESA</label>
-          <input name="empresa" />
-          <label>SENHA</label>
-          <input name="senha" type="password" />
-          <button type="button" id="sendCode" class="btn">Enviar código (2FA)</button>
-        </form>
-        <div id="twofa" style="display:none; margin-top:0.5rem;">
-          <label>CÓDIGO 2FA</label>
-          <input id="codeInput" />
-          <button id="confirmLogin" class="btn">Confirmar</button>
-        </div>
-        <button id="closeModal" class="btn ghost">Fechar</button>
-      </div>
-    </div>
-
-    <script src="/static/core/js/app.js"></script>
   </body>
 </html>

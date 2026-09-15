@@ -1,19 +1,75 @@
 {% extends "core/base.html" %}
 
-{% block title %}Dashboard — Sabor Tech{% endblock %}
+{% block title %}Menu principal — Cardápio e seus valores{% endblock %}
 
-{% block header %}Dashboard{% endblock %}
+{% block header %}Menu principal{% endblock %}
 
 {% block content %}
+  <section class="welcome-row">
+    <div>
+      <p class="eyebrow">Operação do restaurante</p>
+      <h1>O que você deseja fazer?</h1>
+      <p class="welcome-copy">Escolha uma tarefa para cuidar do seu cardápio.</p>
+    </div>
+    <span class="welcome-badge" aria-hidden="true">+</span>
+  </section>
+
+  <section class="action-menu" aria-label="Calculadora de receitas">
+    <div class="section-heading">
+      <span class="section-number">01</span>
+      <div><p class="eyebrow">Calculadora de receitas</p><h2>Fichas técnicas e custos</h2></div>
+    </div>
+    <div class="action-grid">
+      <a class="action-card action-card-featured" href="/produtos/"><span class="action-icon">+</span><span><strong>Adicionar novo insumo</strong><small>Cadastre ingredientes e preços</small></span><b>-></b></a>
+      <a class="action-card" href="/produtos/"><span class="action-icon">*</span><span><strong>Adicionar nova receita</strong><small>Associe insumos e quantidades</small></span><b>-></b></a>
+      <a class="action-card" href="#calculo"><span class="action-icon">=</span><span><strong>Calcular receita</strong><small>Veja custo total e por pessoa</small></span><b>-></b></a>
+      <a class="action-card" href="/produtos/"><span class="action-icon">#</span><span><strong>Ver insumos cadastrados</strong><small>Consulte ingredientes disponíveis</small></span><b>-></b></a>
+      <a class="action-card" href="#receitas"><span class="action-icon">[]</span><span><strong>Ver receitas cadastradas</strong><small>Revise suas fichas técnicas</small></span><b>-></b></a>
+      <a class="action-card" href="/relatorios/"><span class="action-icon">%</span><span><strong>Ver histórico de cálculos</strong><small>Acompanhe consumo e resultados</small></span><b>-></b></a>
+      <a class="action-card action-card-exit" href="{% url 'core:logout' %}"><span class="action-icon">&lt;-</span><span><strong>Sair</strong><small>Encerrar sessão com segurança</small></span><b>-></b></a>
+    </div>
+  </section>
+
+  <div id="calculo" class="dashboard-section-label"><span>Visão geral</span><span class="section-rule"></span></div>
+  <form method="get" class="dashboard-filters" aria-label="Filtros do dashboard">
+    <div class="filter-group">
+      <label for="date_start">Data inicial</label>
+      <input id="date_start" name="date_start" type="date" value="{{ date_start }}" />
+    </div>
+    <div class="filter-group">
+      <label for="date_end">Data final</label>
+      <input id="date_end" name="date_end" type="date" value="{{ date_end }}" />
+    </div>
+    <button type="submit" class="btn">Aplicar período</button>
+  </form>
+
+  <div class="summary-grid">
+    <div class="metric-card">
+      <span class="metric-label">Total vendido</span>
+      <strong>R$ {{ total_vendas|floatformat:2 }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Custo da receita</span>
+      <strong>R$ {{ valor_custo|floatformat:2 }}</strong>
+    </div>
+    <div class="metric-card accent">
+      <span class="metric-label">Lucro</span>
+      <strong>R$ {{ lucro_total|floatformat:2 }}</strong>
+    </div>
+  </div>
+
   <div class="grid dashboard-grid">
     <section class="panel large">
-      <h3>Pedidos do dia</h3>
+      <div class="panel-header">
+        <h3>Pedidos do período</h3>
+        <span class="date-pill">{{ date_start }} até {{ date_end }} · {{ period_days }} dias</span>
+      </div>
       <div class="orders">
         {% for p in pedidos %}
         <div class="order-card status-{{ p.status|lower|slugify }}">
           <div class="order-id">#{{ p.id }}</div>
           <div class="order-client">{{ p.cliente }}</div>
-          <div class="order-info">{{ p.valor }} • Atraso: {{ p.atraso_min }} min</div>
+          <div class="order-info">{{ p.data }} · R$ {{ p.valor|floatformat:2 }} • Atraso: {{ p.atraso_min }} min</div>
         </div>
         {% endfor %}
       </div>
@@ -32,55 +88,52 @@
     </aside>
   </div>
 
-  <section class="panel calculator-panel">
+  <section class="panel pricing-panel">
     <div class="calculator-header">
       <div>
-        <p class="eyebrow">Calculadora</p>
-        <h3>Custo da receita</h3>
+        <p class="eyebrow">Precificação</p>
+        <h3>Precificação por pedido</h3>
       </div>
     </div>
 
-    <form method="post" class="calculator-form">
-      {% csrf_token %}
-      <div class="field-row">
-        <div class="field-group">
-          <label for="quantidade_por_pessoa">Quantidade por pessoa</label>
-          <input id="quantidade_por_pessoa" name="quantidade_por_pessoa" type="number" step="0.01" value="{{ form_data.quantidade_por_pessoa }}" />
-        </div>
-
-        <div class="field-group">
-          <label for="pessoas">Pessoas</label>
-          <input id="pessoas" name="pessoas" type="number" min="1" value="{{ form_data.pessoas }}" />
-        </div>
-
-        <div class="field-group">
-          <label for="custo_unitario">Custo unitário</label>
-          <input id="custo_unitario" name="custo_unitario" type="number" step="0.01" value="{{ form_data.custo_unitario }}" />
-        </div>
+    <div class="pricing-table">
+      <div class="pricing-header">
+        <span>Pedido</span>
+        <span>Cliente</span>
+        <span>Valor</span>
+        <span>Custo</span>
+        <span>Lucro</span>
       </div>
-
-      <button type="submit" class="btn calculator-btn">Calcular</button>
-    </form>
-
-    {% if error_message %}
-      <div class="calculator-error">{{ error_message }}</div>
-    {% endif %}
-
-    {% if calculo %}
-      <div class="calculator-result">
-        <div class="result-item">
-          <span>Total de insumo</span>
-          <strong>{{ calculo.total_insumo|floatformat:2 }} kg</strong>
-        </div>
-        <div class="result-item">
-          <span>Custo total</span>
-          <strong>R$ {{ calculo.custo_total|floatformat:2 }}</strong>
-        </div>
-        <div class="result-item highlight">
-          <span>Custo por pessoa</span>
-          <strong>R$ {{ calculo.custo_por_pessoa|floatformat:2 }}</strong>
-        </div>
+      {% for p in pedidos %}
+      <div class="pricing-row">
+        <span>#{{ p.id }}</span>
+        <span>{{ p.cliente }}</span>
+        <span>R$ {{ p.valor|floatformat:2 }}</span>
+        <span>R$ {{ p.custo_receita|floatformat:2 }}</span>
+        <span class="profit">R$ {{ p.lucro|floatformat:2 }}</span>
       </div>
-    {% endif %}
+      {% endfor %}
+    </div>
   </section>
+
+  <section id="receitas" class="panel recipe-panel">
+    <div class="calculator-header">
+      <p class="eyebrow">Ficha técnica</p>
+      <h3>Receita</h3>
+    </div>
+    <div class="recipe-title">
+      <span>Do que?</span>
+      <strong>{{ receita.nome }} {{ receita.sabor }}</strong>
+    </div>
+    <div class="recipe-ingredients">
+      <h4>Ingredientes</h4>
+      {% for ingrediente in receita.ingredientes %}
+        <div class="recipe-ingredient">
+          <strong>{{ ingrediente.quantidade }}{% if ingrediente.unidade %} {{ ingrediente.unidade }}{% endif %}</strong>
+          <span>{{ ingrediente.nome }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
 {% endblock %}

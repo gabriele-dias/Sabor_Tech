@@ -3,32 +3,33 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Login — Sabor Tech</title>
+    <title>Entrar — Cardápio e seus valores</title>
     <link rel="stylesheet" href="/static/core/css/app.css">
   </head>
   <body class="login-page">
     <main class="login-card">
       <section class="login-intro">
         <div class="login-brand">
-          <span class="brand-mark">◉</span>
-          <span>Sabor Tech</span>
+          <span class="brand-mark">+</span>
+          <span>Cardápio <em>e seus valores</em></span>
         </div>
         <div class="login-intro-content">
-          <h1>Gestão mais simples.<br>Restaurante mais eficiente.</h1>
-          <p>Controle seus pedidos, mesas e operações em um único lugar.</p>
+          <p class="login-kicker">GESTÃO DE COZINHA</p>
+          <h1>O sabor começa<br>na organização.</h1>
+          <p>Calcule custos, organize receitas e cuide do seu cardápio com mais clareza.</p>
         </div>
       </section>
 
       <section class="login-panel">
-        <p class="login-eyebrow">Bem-vindo(a)</p>
-        <h2>Entrar na sua conta</h2>
-        <p class="login-description">Acesse o sistema para gerenciar seu restaurante.</p>
+        <p class="login-eyebrow">Bem-vindo(a) de volta</p>
+        <h2>Entre no seu restaurante</h2>
+        <p class="login-description">Acesse as ferramentas do seu cardápio.</p>
 
         <form method="post" class="login-form">
           {% csrf_token %}
 
           <div class="field">
-            <label for="{{ form.username.id_for_label }}">E-mail</label>
+            <label for="{{ form.username.id_for_label }}">Usuário</label>
             {{ form.username }}
           </div>
 
@@ -50,7 +51,7 @@
           {% endif %}
         </form>
 
-        <p class="login-access">Não possui uma conta? <a href="#">Solicite seu acesso</a></p>
+        <p class="login-access">Ainda não possui uma conta? <a href="#">Cadastrar nova conta</a></p>
       </section>
     </main>
   </body>

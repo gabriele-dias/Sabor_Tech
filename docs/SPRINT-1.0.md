@@ -10,7 +10,7 @@
 
 - Views e endpoints HTMx em [core/views.py](core/views.py): `dashboard`, `atendimento`, `clientes_page`, `produtos_page`, `relatorios`, `configuracoes`, `orders_partial`, `clients_partial`, `change_status` e `add_client`.
 - URLs em [core/urls.py](core/urls.py): rotas HTML e endpoints parcialmente interactivos.
-- Templates em [core/templates/core](core/templates/core): `base.html`, `dashboard.html`, `atendimento.html`, `clientes.html`, `produtos.html`, `relatorios.html`, `configuracoes.html`, `_orders.html`, `_clients_list.html`, `_time.html` e `login.html`.
+- Templates em [core/templates/core](core/templates/core): `base.html`, `dashboard.html`, `atendimento.html`, `clientes.html`, `produtos.html`, `relatorios.html`, `configuracoes.html`, `_orders.html`, `_clients_list.html` e `login.html`.
 - Regras de controle de acesso com `role_required` em [core/views.py](core/views.py).
 - Migração de grupos de acesso em [core/migrations/0002_create_roles.py](core/migrations/0002_create_roles.py).
 - Estáticos em [core/static/core](core/static/core).

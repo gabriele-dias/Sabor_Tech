@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 
 
-class SaborTechLoginForm(AuthenticationForm):
+class CardapioLoginForm(AuthenticationForm):
     username = forms.CharField(
         label="E-mail",
         widget=forms.TextInput(
