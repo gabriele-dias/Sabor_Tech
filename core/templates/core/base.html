@@ -3,20 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{% block title %}Sabor Tech{% endblock %}</title>
+    <title>{% block title %}Cardápio e seus valores{% endblock %}</title>
     <link rel="stylesheet" href="/static/core/css/app.css">
     <script src="https://unpkg.com/htmx.org@1.10.0"></script>
   </head>
   <body>
     <div class="app-shell">
       <aside class="sidebar">
-        <div class="brand">Sabor Tech</div>
+        <div class="brand"><span class="brand-mark">+</span> Cardápio <em>e seus valores</em></div>
         <nav>
-          <a href="/">Cardápio e seus valores</a>
-          <a href="/atendimento/">Atendimento</a>
-          <a href="/produtos/">Produtos</a>
-          <a href="/relatorios/">Relatórios</a>
-          <a href="/configuracoes/">Configurações</a>
+          <a class="active" href="/">[ ] <span>Menu principal</span></a>
+          <a href="/atendimento/">[+] <span>Atendimento</span></a>
+          <a href="/produtos/">[#] <span>Insumos e produtos</span></a>
+          <a href="/relatorios/">[%] <span>Relatórios</span></a>
+          <a href="/configuracoes/">[=] <span>Configurações</span></a>
         </nav>
         <div class="sidebar-footer">
           {% if request.user.is_authenticated %}
