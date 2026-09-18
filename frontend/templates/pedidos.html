@@ -1,0 +1,797 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block titulo %} - Pedidos{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/pedidos.css' %}">
+{% endblock %}
+
+{% block conteudo %}
+
+<div class="pedidos-page">
+
+    <!-- =========================
+         SIDEBAR
+         ========================= -->
+    <aside class="sidebar">
+
+        <div class="sidebar-logo">
+
+            <div class="sidebar-logo-icon">
+                🍽
+            </div>
+
+            <div>
+                <h2>Sabor Tech</h2>
+                <span>GESTÃO INTELIGENTE</span>
+            </div>
+
+        </div>
+
+
+        <nav class="sidebar-menu">
+
+            <a href="#" class="menu-item active">
+                <span>▦</span>
+                Todos
+            </a>
+
+            <a href="#" class="menu-item">
+                <span>🍕</span>
+                Pizzas
+            </a>
+
+            <a href="#" class="menu-item">
+                <span>🍔</span>
+                Lanches
+            </a>
+
+            <a href="#" class="menu-item">
+                <span>🥤</span>
+                Bebidas
+            </a>
+
+            <a href="#" class="menu-item">
+                <span>🍰</span>
+                Sobremesas
+            </a>
+
+            <a href="#" class="menu-item">
+                <span>🍟</span>
+                Porções
+            </a>
+
+            <a href="#" class="menu-item">
+                <span>🏷</span>
+                Combos
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <a href="#">
+                ⌂ Início
+            </a>
+
+            <a href="#">
+                ⚙ Configurações
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =========================
+         ÁREA CENTRAL
+         ========================= -->
+    <main class="produtos-area">
+
+        <!-- CABEÇALHO -->
+        <header class="pedidos-header">
+
+            <div class="search-box">
+
+                <span>⌕</span>
+
+                <input
+                    type="text"
+                    id="buscaProduto"
+                    placeholder="Buscar produtos..."
+                >
+
+            </div>
+
+
+            <button
+                type="button"
+                class="add-item-button"
+            >
+                + Adicionar item
+            </button>
+
+
+            <div class="usuario-box">
+
+                <div class="usuario-avatar">
+                    S
+                </div>
+
+                <div>
+                    <strong>
+                        {{ request.user.username }}
+                    </strong>
+
+                    <span>
+                        Garçom
+                    </span>
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- TÍTULO -->
+        <div class="produtos-title">
+
+            <div>
+
+                <span class="section-label">
+                    TODOS OS PRODUTOS
+                </span>
+
+                <h1>
+                    Cardápio
+                </h1>
+
+            </div>
+
+
+            <div class="view-buttons">
+
+                <button
+                    type="button"
+                    class="active"
+                >
+                    ▦
+                </button>
+
+                <button type="button">
+                    ☰
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             PRODUTOS
+             ========================= -->
+        <section class="produtos-grid">
+
+
+            <!-- PIZZA CALABRESA -->
+            <article
+                class="produto-card"
+                data-categoria="pizzas"
+            >
+
+                <div class="produto-image pizza-calabresa">
+                    🍕
+                </div>
+
+                <div class="produto-info">
+
+                    <h3>
+                        Pizza Calabresa
+                    </h3>
+
+                    <p>
+                        Calabresa, queijo e cebola
+                    </p>
+
+                    <div class="produto-bottom">
+
+                        <strong>
+                            R$ 59,90
+                        </strong>
+
+                        <button
+                            type="button"
+                            onclick="adicionarProduto('Pizza Calabresa', 59.90)"
+                            aria-label="Adicionar Pizza Calabresa"
+                        >
+                            +
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- PIZZA MARGUERITA -->
+            <article
+                class="produto-card"
+                data-categoria="pizzas"
+            >
+
+                <div class="produto-image pizza-marguerita">
+                    🍕
+                </div>
+
+                <div class="produto-info">
+
+                    <h3>
+                        Pizza Marguerita
+                    </h3>
+
+                    <p>
+                        Queijo, tomate e manjericão
+                    </p>
+
+                    <div class="produto-bottom">
+
+                        <strong>
+                            R$ 54,90
+                        </strong>
+
+                        <button
+                            type="button"
+                            onclick="adicionarProduto('Pizza Marguerita', 54.90)"
+                            aria-label="Adicionar Pizza Marguerita"
+                        >
+                            +
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- FRANGO COM CATUPIRY -->
+            <article
+                class="produto-card"
+                data-categoria="pizzas"
+            >
+
+                <div class="produto-image pizza-frango">
+                    🍕
+                </div>
+
+                <div class="produto-info">
+
+                    <h3>
+                        Frango com Catupiry
+                    </h3>
+
+                    <p>
+                        Frango, queijo e catupiry
+                    </p>
+
+                    <div class="produto-bottom">
+
+                        <strong>
+                            R$ 62,90
+                        </strong>
+
+                        <button
+                            type="button"
+                            onclick="adicionarProduto('Frango com Catupiry', 62.90)"
+                            aria-label="Adicionar Frango com Catupiry"
+                        >
+                            +
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- PIZZA PORTUGUESA -->
+            <article
+                class="produto-card"
+                data-categoria="pizzas"
+            >
+
+                <div class="produto-image pizza-portuguesa">
+                    🍕
+                </div>
+
+                <div class="produto-info">
+
+                    <h3>
+                        Pizza Portuguesa
+                    </h3>
+
+                    <p>
+                        Presunto, ovos, queijo e cebola
+                    </p>
+
+                    <div class="produto-bottom">
+
+                        <strong>
+                            R$ 61,90
+                        </strong>
+
+                        <button
+                            type="button"
+                            onclick="adicionarProduto('Pizza Portuguesa', 61.90)"
+                            aria-label="Adicionar Pizza Portuguesa"
+                        >
+                            +
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- X-BACON -->
+            <article
+                class="produto-card"
+                data-categoria="lanches"
+            >
+
+                <div class="produto-image lanche">
+                    🍔
+                </div>
+
+                <div class="produto-info">
+
+                    <h3>
+                        X-Bacon
+                    </h3>
+
+                    <p>
+                        Hambúrguer, bacon e queijo
+                    </p>
+
+                    <div class="produto-bottom">
+
+                        <strong>
+                            R$ 34,90
+                        </strong>
+
+                        <button
+                            type="button"
+                            onclick="adicionarProduto('X-Bacon', 34.90)"
+                            aria-label="Adicionar X-Bacon"
+                        >
+                            +
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- X-SALADA -->
+            <article
+                class="produto-card"
+                data-categoria="lanches"
+            >
+
+                <div class="produto-image lanche">
+                    🍔
+                </div>
+
+                <div class="produto-info">
+
+                    <h3>
+                        X-Salada
+                    </h3>
+
+                    <p>
+                        Hambúrguer, queijo e salada
+                    </p>
+
+                    <div class="produto-bottom">
+
+                        <strong>
+                            R$ 32,90
+                        </strong>
+
+                        <button
+                            type="button"
+                            onclick="adicionarProduto('X-Salada', 32.90)"
+                            aria-label="Adicionar X-Salada"
+                        >
+                            +
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- X-EGG BACON -->
+            <article
+                class="produto-card"
+                data-categoria="lanches"
+            >
+
+                <div class="produto-image lanche">
+                    🍔
+                </div>
+
+                <div class="produto-info">
+
+                    <h3>
+                        X-Egg Bacon
+                    </h3>
+
+                    <p>
+                        Hambúrguer, ovo, bacon e queijo
+                    </p>
+
+                    <div class="produto-bottom">
+
+                        <strong>
+                            R$ 36,90
+                        </strong>
+
+                        <button
+                            type="button"
+                            onclick="adicionarProduto('X-Egg Bacon', 36.90)"
+                            aria-label="Adicionar X-Egg Bacon"
+                        >
+                            +
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- FRANGO GRELHADO -->
+            <article
+                class="produto-card"
+                data-categoria="lanches"
+            >
+
+                <div class="produto-image lanche">
+                    🍔
+                </div>
+
+                <div class="produto-info">
+
+                    <h3>
+                        Frango Grelhado
+                    </h3>
+
+                    <p>
+                        Frango, queijo e salada
+                    </p>
+
+                    <div class="produto-bottom">
+
+                        <strong>
+                            R$ 31,90
+                        </strong>
+
+                        <button
+                            type="button"
+                            onclick="adicionarProduto('Frango Grelhado', 31.90)"
+                            aria-label="Adicionar Frango Grelhado"
+                        >
+                            +
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </article>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================
+         PEDIDO LATERAL
+         ========================= -->
+    <aside class="pedido-lateral">
+
+        <div class="mesa-header">
+
+            <div>
+
+                <span>
+                    MESA
+                </span>
+
+                <h2>
+                    Mesa 05
+                </h2>
+
+            </div>
+
+            <button type="button">
+                Alterar mesa
+            </button>
+
+        </div>
+
+
+        <!-- LISTA DO PEDIDO -->
+        <div
+            id="listaPedido"
+            class="pedido-lista"
+        >
+
+            <div class="pedido-vazio">
+
+                <span>
+                    🧾
+                </span>
+
+                <p>
+                    Nenhum item adicionado
+                </p>
+
+                <small>
+                    Clique no + de algum produto
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <!-- RESUMO -->
+        <div class="pedido-resumo">
+
+            <div class="resumo-linha">
+
+                <span>
+                    Subtotal
+                </span>
+
+                <strong id="subtotal">
+                    R$ 0,00
+                </strong>
+
+            </div>
+
+
+            <div class="resumo-linha">
+
+                <span>
+                    Taxa de serviço (10%)
+                </span>
+
+                <strong id="taxa">
+                    R$ 0,00
+                </strong>
+
+            </div>
+
+
+            <div class="resumo-total">
+
+                <span>
+                    TOTAL
+                </span>
+
+                <strong id="total">
+                    R$ 0,00
+                </strong>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="concluir-button"
+            >
+                ✓ Concluir Pedido
+            </button>
+
+        </div>
+
+    </aside>
+
+</div>
+
+{% endblock %}
+
+
+{% block js_extra %}
+
+<script>
+
+    /* =========================
+       PEDIDO
+       ========================= */
+
+    let pedido = [];
+
+
+    function adicionarProduto(nome, preco) {
+
+        const existente = pedido.find(
+            item => item.nome === nome
+        );
+
+        if (existente) {
+
+            existente.quantidade++;
+
+        } else {
+
+            pedido.push({
+                nome: nome,
+                preco: preco,
+                quantidade: 1
+            });
+
+        }
+
+        atualizarPedido();
+    }
+
+
+    function removerProduto(nome) {
+
+        pedido = pedido.filter(
+            item => item.nome !== nome
+        );
+
+        atualizarPedido();
+    }
+
+
+    function atualizarPedido() {
+
+        const lista =
+            document.getElementById("listaPedido");
+
+
+        /* PEDIDO VAZIO */
+
+        if (pedido.length === 0) {
+
+            lista.innerHTML = `
+                <div class="pedido-vazio">
+
+                    <span>🧾</span>
+
+                    <p>
+                        Nenhum item adicionado
+                    </p>
+
+                    <small>
+                        Clique no + de algum produto
+                    </small>
+
+                </div>
+            `;
+
+        } else {
+
+            lista.innerHTML = "";
+
+
+            /* PRODUTOS DO PEDIDO */
+
+            pedido.forEach(item => {
+
+                const subtotalItem =
+                    item.preco * item.quantidade;
+
+
+                lista.innerHTML += `
+                    <div class="pedido-item">
+
+                        <div class="pedido-quantidade">
+                            ${item.quantidade}
+                        </div>
+
+                        <div class="pedido-item-info">
+
+                            <strong>
+                                ${item.nome}
+                            </strong>
+
+                            <span>
+                                ${formatarMoeda(subtotalItem)}
+                            </span>
+
+                        </div>
+
+                        <button
+                            type="button"
+                            class="remover-item"
+                            onclick="removerProduto('${item.nome}')"
+                            aria-label="Remover ${item.nome}"
+                        >
+                            ×
+                        </button>
+
+                    </div>
+                `;
+
+            });
+
+        }
+
+
+        /* =========================
+           CÁLCULOS
+           ========================= */
+
+        const subtotal = pedido.reduce(
+
+            (soma, item) =>
+                soma +
+                (item.preco * item.quantidade),
+
+            0
+        );
+
+
+        const taxa =
+            subtotal * 0.10;
+
+
+        const total =
+            subtotal + taxa;
+
+
+        document.getElementById(
+            "subtotal"
+        ).textContent =
+            formatarMoeda(subtotal);
+
+
+        document.getElementById(
+            "taxa"
+        ).textContent =
+            formatarMoeda(taxa);
+
+
+        document.getElementById(
+            "total"
+        ).textContent =
+            formatarMoeda(total);
+    }
+
+
+    /* =========================
+       FORMATAÇÃO DE MOEDA
+       ========================= */
+
+    function formatarMoeda(valor) {
+
+        return valor.toLocaleString(
+            "pt-BR",
+            {
+                style: "currency",
+                currency: "BRL"
+            }
+        );
+    }
+
+</script>
+
+{% endblock %}

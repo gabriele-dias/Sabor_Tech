@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block titulo %} - Login{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/login.css' %}">
+{% endblock %}
+
+{% block conteudo %}
+
+<div class="login-page">
+
+    <div class="login-container">
+
+        <!-- LADO ESQUERDO -->
+        <div class="login-brand">
+
+            <div class="brand-logo">
+                <div class="logo-icon">
+                    <span>🍽</span>
+                </div>
+
+                <div>
+                    <h1>Sabor <strong>Tech</strong></h1>
+                    <span class="brand-subtitle">
+                        GESTÃO INTELIGENTE
+                    </span>
+                </div>
+            </div>
+
+            <div class="brand-content">
+                <h2>
+                    Gestão mais simples.<br>
+                    Restaurante mais eficiente.
+                </h2>
+
+                <p>
+                    Controle seus pedidos, mesas e operações
+                    em um único lugar.
+                </p>
+            </div>
+
+            <div class="brand-decoration decoration-one"></div>
+            <div class="brand-decoration decoration-two"></div>
+
+        </div>
+
+
+        <!-- LADO DIREITO -->
+        <div class="login-form-area">
+
+            <div class="login-form">
+
+                <!-- LOGO MOBILE -->
+                <div class="mobile-logo">
+                    <div class="logo-icon">
+                        <span>🍽</span>
+                    </div>
+
+                    <h1>Sabor <strong>Tech</strong></h1>
+                </div>
+
+
+                <!-- CABEÇALHO -->
+                <div class="form-header">
+
+                    <span class="welcome-label">
+                        BEM-VINDO(A)
+                    </span>
+
+                    <h2>Entrar na sua conta</h2>
+
+                    <p>
+                        Acesse o sistema para gerenciar seu restaurante.
+                    </p>
+
+                </div>
+
+
+                <!-- FORMULÁRIO -->
+                <form method="POST">
+
+                    {% csrf_token %}
+
+                    <!-- EMAIL -->
+                    <div class="form-group">
+
+                        <label for="email">
+                            E-mail
+                        </label>
+
+                        <div class="input-wrapper">
+
+                            <span class="input-icon">
+                                ✉
+                            </span>
+
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                placeholder="Digite seu e-mail"
+                                autocomplete="email"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- SENHA -->
+                    <div class="form-group">
+
+                        <div class="password-label">
+
+                            <label for="senha">
+                                Senha
+                            </label>
+
+                            <a href="#" class="forgot-password">
+                                Esqueci minha senha
+                            </a>
+
+                        </div>
+
+                        <div class="input-wrapper">
+
+                            <span class="input-icon">
+                                🔒
+                            </span>
+
+                            <input
+                                type="password"
+                                id="senha"
+                                name="senha"
+                                placeholder="Digite sua senha"
+                                autocomplete="current-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="show-password"
+                                onclick="togglePassword()"
+                                aria-label="Mostrar senha"
+                            >
+                                ◉
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- MENSAGENS DO DJANGO -->
+                    {% if messages %}
+
+                        <div class="messages">
+
+                            {% for message in messages %}
+
+                                <div class="message">
+                                    {{ message }}
+                                </div>
+
+                            {% endfor %}
+
+                        </div>
+
+                    {% endif %}
+
+
+                    <!-- BOTÃO ENTRAR -->
+                    <button
+                        type="submit"
+                        class="login-button"
+                    >
+
+                        <span>Entrar</span>
+
+                        <span class="button-arrow">
+                            →
+                        </span>
+
+                    </button>
+
+                </form>
+
+
+                <!-- RODAPÉ -->
+                <div class="login-footer">
+
+                    <span>
+                        Não possui uma conta?
+                    </span>
+
+                    <a href="#">
+                        Solicite seu acesso
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+    function togglePassword() {
+
+        const password =
+            document.getElementById("senha");
+
+        const button =
+            document.querySelector(".show-password");
+
+        if (password.type === "password") {
+
+            password.type = "text";
+            button.setAttribute(
+                "aria-label",
+                "Ocultar senha"
+            );
+
+        } else {
+
+            password.type = "password";
+            button.setAttribute(
+                "aria-label",
+                "Mostrar senha"
+            );
+
+        }
+    }
+</script>
+
+{% endblock %}

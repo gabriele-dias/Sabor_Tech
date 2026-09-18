@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from decimal import Decimal
 
 from django.contrib.auth.models import Group, User
@@ -111,3 +112,8 @@ class OrderCalculationTests(TestCase):
         self.assertEqual(response.context["media_vendas"], 72.25)
         self.assertContains(response, "Pizza Marguerita")
         self.assertContains(response, "farinha de trigo")
+=======
+from django.test import TestCase
+
+# Create your tests here.
+>>>>>>> Parte_Front/main

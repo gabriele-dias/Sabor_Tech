@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from decimal import Decimal
 
 from django.db import models
@@ -39,3 +40,8 @@ class Ingrediente(models.Model):
 
     def __str__(self):
         return f"{self.quantidade} {self.unidade} de {self.nome}"
+=======
+from django.db import models
+
+# Create your models here.
+>>>>>>> Parte_Front/main
