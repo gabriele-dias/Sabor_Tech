@@ -59,10 +59,15 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'setup.urls'
 
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "frontend" / "templates"],  # adiciona os templates dela
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -73,6 +78,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 WSGI_APPLICATION = 'setup.wsgi.application'
 
