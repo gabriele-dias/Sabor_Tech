@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Sabor Tech | Pedidos</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
     <link rel="stylesheet" href="{% static 'css/pedidos.css' %}">
   </head>
@@ -43,7 +44,6 @@
             <span>⌕</span>
             <input type="search" id="buscaProduto" placeholder="Buscar produtos..." aria-label="Buscar produtos">
           </div>
-          <button type="button" class="add-item-button" id="addItemButton">+ Adicionar item</button>
           <div class="usuario-box">
             <div class="usuario-avatar">{{ request.user.username|first|upper }}</div>
             <div><strong>{{ request.user.username }}</strong><span>Administrador</span></div>
@@ -74,7 +74,7 @@
           <div class="resumo-linha"><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div>
           <div class="resumo-linha"><span>Taxa de serviço (10%)</span><strong id="taxa">R$ 0,00</strong></div>
           <div class="resumo-total"><span>TOTAL</span><strong id="total">R$ 0,00</strong></div>
-          <button type="button" class="concluir-button">✓ Concluir Pedido</button>
+          <button type="button" class="concluir-button" id="concluirPedido">✓ Concluir Pedido</button>
         </div>
       </aside>
     </div>
@@ -83,6 +83,7 @@
       const pedido = [];
       const moeda = (valor) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
       const lista = document.querySelector('#listaPedido');
+      const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
       function atualizarPedido() {
         if (!pedido.length) {
@@ -105,64 +106,15 @@
       lista.addEventListener('click', (event) => { if (event.target.dataset.remover) { pedido.splice(pedido.findIndex((item) => item.nome === event.target.dataset.remover), 1); atualizarPedido(); } });
       document.querySelector('#buscaProduto').addEventListener('input', (event) => { const termo = event.target.value.toLowerCase(); document.querySelectorAll('.produto-card').forEach((card) => { card.hidden = !card.dataset.nome.toLowerCase().includes(termo); }); });
       document.querySelectorAll('[data-filter]').forEach((link) => link.addEventListener('click', (event) => { event.preventDefault(); const categoria = link.dataset.filter; document.querySelectorAll('.menu-item').forEach((item) => item.classList.remove('active')); link.classList.add('active'); document.querySelectorAll('.produto-card').forEach((card) => { card.hidden = card.dataset.categoria !== categoria; }); }));
-    </script>
-  </body>
-</html>
-      </aside>
-
-      <main class="main-panel">
-        <header class="topbar orders-topbar">
-          <div>
-            <p class="eyebrow">Operação do restaurante</p>
-            <h1>Pedidos</h1>
-          </div>
-          <div class="user-pill"><span class="dot"></span>{{ request.user.username }}</div>
-        </header>
-
-        <section class="orders-summary">
-          <article><span>Total hoje</span><strong>02</strong><small>pedidos registrados</small></article>
-          <article><span>Em andamento</span><strong>01</strong><small class="warning-text">aguardando preparo</small></article>
-          <article><span>Faturamento</span><strong>R$ 144,50</strong><small>no período selecionado</small></article>
-        </section>
-
-        <section class="orders-toolbar">
-          <div>
-            <p class="kicker">Acompanhamento em tempo real</p>
-            <h2>Pedidos recentes</h2>
-          </div>
-          <div class="order-filters" role="group" aria-label="Filtros de pedidos">
-            <button class="filter-button active" type="button">Todos</button>
-            <button class="filter-button" type="button">Pendentes</button>
-            <button class="filter-button" type="button">Entregues</button>
-          </div>
-        </section>
-
-        <section class="orders-table-wrap">
-          <table class="orders-table">
-            <thead>
-              <tr><th>Pedido</th><th>Cliente</th><th>Data</th><th>Valor</th><th>Status</th><th></th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>#101</strong></td><td>Maria Costa</td><td>12 set 2026</td><td>R$ 45,50</td>
-                <td><span class="status pending">Pendente</span></td><td><button class="details-button" type="button">Ver detalhes</button></td>
-              </tr>
-              <tr>
-                <td><strong>#102</strong></td><td>João Pereira</td><td>13 set 2026</td><td>R$ 99,00</td>
-                <td><span class="status delivered">Entregue</span></td><td><button class="details-button" type="button">Ver detalhes</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
-      </main>
-    </div>
-    <script src="{% static 'js/main.js' %}"></script>
-    <script>
-      document.querySelectorAll('.filter-button').forEach((button) => {
-        button.addEventListener('click', () => {
-          document.querySelectorAll('.filter-button').forEach((item) => item.classList.remove('active'));
-          button.classList.add('active');
-        });
+      document.querySelector('#concluirPedido').addEventListener('click', async () => {
+        if (!pedido.length) return;
+        const subtotal = pedido.reduce((sum, item) => sum + item.preco * item.quantidade, 0);
+        const button = document.querySelector('#concluirPedido');
+        button.disabled = true;
+        const response = await fetch('{% url "core:concluir_pedido" %}', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }, body: JSON.stringify({ items: pedido, subtotal, service_fee: subtotal * .1, total: subtotal * 1.1 }) });
+        if (response.ok) { alert('Pedido enviado para a administração.'); pedido.length = 0; atualizarPedido(); }
+        else { alert('Não foi possível concluir o pedido.'); }
+        button.disabled = false;
       });
     </script>
   </body>

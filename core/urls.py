@@ -15,11 +15,12 @@ urlpatterns = [
         ),
         name="login",
     ),
-    path("logout/", auth_views.LogoutView.as_view(next_page="/login/"), name="logout"),
+    path("logout/", views.logout_view, name="logout"),
     path("home/", views.home, name="home"),
     path("dashboard/", views.dashboard, name="dashboard"),
     path("", views.home, name="home-root"),
     path("pedidos/", views.pedidos, name="pedidos"),
+    path("pedidos/concluir/", views.concluir_pedido, name="concluir_pedido"),
     path("produtos/", views.produtos, name="produtos"),
     path("relatorios/", views.relatorios, name="relatorios"),
 ]

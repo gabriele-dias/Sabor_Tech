@@ -136,4 +136,22 @@
     </div>
   </section>
 
+  <section class="panel pricing-panel">
+    <div class="calculator-header">
+      <p class="eyebrow">Atendimento</p>
+      <h3>Pedidos recebidos dos garçons</h3>
+    </div>
+    <div class="orders">
+      {% for order in orders_received %}
+        <div class="order-card status-pendente">
+          <div class="order-id">#{{ order.id }}</div>
+          <div class="order-client">Garçom: {{ order.waiter.username }}</div>
+          <div class="order-info">{{ order.created_at|date:"d/m/Y H:i" }} · R$ {{ order.total|floatformat:2 }} · {{ order.status }} · {% for item in order.items %}{{ item.nome }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+        </div>
+      {% empty %}
+        <p class="welcome-copy">Nenhum pedido novo recebido.</p>
+      {% endfor %}
+    </div>
+  </section>
+
 {% endblock %}

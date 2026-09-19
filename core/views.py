@@ -1,10 +1,17 @@
 from django.contrib.auth import views as auth_views
+from django.contrib.auth import logout
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from decimal import Decimal, InvalidOperation
+import json
+
+from .models import Order
 
 
 class RoleLoginView(auth_views.LoginView):
@@ -24,11 +31,44 @@ def redirect_waiter(request):
     return None
 
 
+def logout_view(request):
+    logout(request)
+    return redirect('core:login')
+
+
 @login_required
 def pedidos(request):
     if not request.user.is_superuser and not is_waiter(request.user):
         return redirect('core:home')
     return render(request, 'core/pedidos.html')
+
+
+@login_required
+@require_POST
+def concluir_pedido(request):
+    if not is_waiter(request.user) and not request.user.is_superuser:
+        return JsonResponse({'error': 'Apenas garçons podem concluir pedidos.'}, status=403)
+
+    try:
+        payload = json.loads(request.body)
+        items = payload.get('items', [])
+        subtotal = Decimal(str(payload.get('subtotal', '0')))
+        service_fee = Decimal(str(payload.get('service_fee', '0')))
+        total = Decimal(str(payload.get('total', '0')))
+    except (json.JSONDecodeError, InvalidOperation, TypeError, ValueError):
+        return JsonResponse({'error': 'Dados do pedido inválidos.'}, status=400)
+
+    if not items or subtotal <= 0 or total <= 0:
+        return JsonResponse({'error': 'Adicione pelo menos um item ao pedido.'}, status=400)
+
+    order = Order.objects.create(
+        waiter=request.user,
+        items=items,
+        subtotal=subtotal,
+        service_fee=service_fee,
+        total=total,
+    )
+    return JsonResponse({'id': order.pk, 'message': 'Pedido enviado para a administração.'}, status=201)
 
 
 @login_required
@@ -88,6 +128,7 @@ def dashboard(request):
         'pedidos': pedidos_mock,
         'clientes': clientes,
         'receita': receita,
+        'orders_received': Order.objects.select_related('waiter')[:20],
     }
     return render(request, 'core/dashboard.html', context)
 
