@@ -1,16 +1,48 @@
-{% extends "core/base.html" %}
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sabor Tech | Cardápio</title>
+    <link rel="stylesheet" href="{% static 'css/cardapio.css' %}">
+  </head>
+  <body class="menu-page">
+    <div class="menu-shell">
+      <aside class="menu-sidebar">
+        <div class="menu-brand"><span>+</span><div><strong>Sabor Tech</strong><small>GESTÃO INTELIGENTE</small></div></div>
+        <nav class="menu-nav">
+          <a href="{% url 'core:home' %}">Home</a><a href="{% url 'core:dashboard' %}">Dashboard</a><a href="{% url 'core:pedidos' %}">Pedidos</a><a class="active" href="{% url 'core:produtos' %}">Cardápio</a><a href="{% url 'core:receitas' %}">Adicionar receitas</a><a href="{% url 'core:relatorios' %}">Relatórios</a>
+        </nav>
+        <form method="post" action="{% url 'core:logout' %}" class="menu-logout">{% csrf_token %}<button type="submit">Sair</button></form>
+      </aside>
 
-{% block title %}Produtos — Cardápio e seus valores{% endblock %}
-
-{% block header %}Produtos{% endblock %}
-
-{% block content %}
-  <div class="panel">
-    <h3>Produtos</h3>
-    <ul>
-      {% for p in produtos %}
-      <li>{{ p.nome }} — R$ {{ p.preco }}</li>
-      {% endfor %}
-    </ul>
-  </div>
-{% endblock %}
+      <main class="menu-main">
+        <header class="menu-header">
+          <div><p class="menu-eyebrow">CATÁLOGO DO RESTAURANTE</p><h1>Cardápio</h1><p>Organize seus produtos, preços e disponibilidade em um só lugar.</p></div>
+          <button class="primary-button" type="button" id="newProductButton">+ Novo produto</button>
+        </header>
+        <section class="menu-toolbar">
+          <label class="menu-search"><span>⌕</span><input id="menuSearch" type="search" placeholder="Buscar no cardápio..." aria-label="Buscar no cardápio"></label>
+          <div class="category-tabs" role="group" aria-label="Categorias"><button class="active" data-category="Todos" type="button">Todos</button><button data-category="Pizzas" type="button">Pizzas</button><button data-category="Lanches" type="button">Lanches</button><button data-category="Massas" type="button">Massas</button><button data-category="Bebidas" type="button">Bebidas</button><button data-category="Sobremesas" type="button">Sobremesas</button></div>
+        </section>
+        <section class="menu-meta"><strong><span id="productCount">{{ produtos|length }}</span> produtos</strong><span>Atualizado hoje · preços em reais</span></section>
+        <section class="menu-grid" id="menuGrid">
+          {% for produto in produtos %}
+            <article class="menu-card" data-category="{{ produto.categoria }}" data-name="{{ produto.nome|lower }}">
+              <div class="menu-card-image"><span>{{ produto.emoji }}</span><span class="availability {% if produto.disponivel %}available{% else %}unavailable{% endif %}">{% if produto.disponivel %}Disponível{% else %}Indisponível{% endif %}</span></div>
+              <div class="menu-card-body"><div class="card-category">{{ produto.categoria }}</div><h2>{{ produto.nome }}</h2><p>{{ produto.descricao }}</p><footer><strong>R$ {{ produto.preco }}</strong><button type="button" aria-label="Editar {{ produto.nome }}">Editar</button></footer></div>
+            </article>
+          {% endfor %}
+        </section>
+        <p class="empty-menu" id="emptyMenu" hidden>Nenhum produto encontrado para essa busca.</p>
+      </main>
+    </div>
+    <script>
+      const cards = [...document.querySelectorAll('.menu-card')]; const search = document.querySelector('#menuSearch'); const count = document.querySelector('#productCount'); let category = 'Todos';
+      function filterMenu() { const term = search.value.toLowerCase(); let visible = 0; cards.forEach((card) => { const match = (category === 'Todos' || card.dataset.category === category) && card.dataset.name.includes(term); card.hidden = !match; if (match) visible++; }); count.textContent = visible; document.querySelector('#emptyMenu').hidden = visible !== 0; }
+      document.querySelectorAll('[data-category]').forEach((button) => button.addEventListener('click', () => { category = button.dataset.category; document.querySelectorAll('[data-category]').forEach((item) => item.classList.remove('active')); button.classList.add('active'); filterMenu(); })); search.addEventListener('input', filterMenu);
+      document.querySelector('#newProductButton').addEventListener('click', () => alert('Cadastro de novo produto disponível na próxima etapa.'));
+    </script>
+  </body>
+</html>

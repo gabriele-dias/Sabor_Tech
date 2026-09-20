@@ -158,7 +158,23 @@ def produtos(request):
     waiter_redirect = redirect_waiter(request)
     if waiter_redirect:
         return waiter_redirect
-    return render(request, 'core/produtos.html', {'produtos': []})
+    produtos = [
+        {'nome': 'Pizza Marguerita', 'categoria': 'Pizzas', 'descricao': 'Molho de tomate, mozzarella e manjericão.', 'preco': '54,90', 'emoji': '🍕', 'disponivel': True},
+        {'nome': 'Pizza Calabresa', 'categoria': 'Pizzas', 'descricao': 'Calabresa artesanal, cebola e mozzarella.', 'preco': '59,90', 'emoji': '🍕', 'disponivel': True},
+        {'nome': 'X-Bacon', 'categoria': 'Lanches', 'descricao': 'Hambúrguer, bacon crocante e queijo.', 'preco': '34,90', 'emoji': '🍔', 'disponivel': True},
+        {'nome': 'Lasanha da Casa', 'categoria': 'Massas', 'descricao': 'Camadas de massa, molho e queijo gratinado.', 'preco': '42,90', 'emoji': '🍝', 'disponivel': True},
+        {'nome': 'Suco Natural', 'categoria': 'Bebidas', 'descricao': 'Escolha o sabor do dia, servido bem gelado.', 'preco': '9,90', 'emoji': '🥤', 'disponivel': True},
+        {'nome': 'Brownie com Sorvete', 'categoria': 'Sobremesas', 'descricao': 'Brownie quente, sorvete e calda de chocolate.', 'preco': '18,90', 'emoji': '🍰', 'disponivel': False},
+    ]
+    return render(request, 'core/produtos.html', {'produtos': produtos})
+
+
+@login_required
+def receitas(request):
+    waiter_redirect = redirect_waiter(request)
+    if waiter_redirect:
+        return waiter_redirect
+    return render(request, 'core/receitas.html')
 
 
 @login_required
