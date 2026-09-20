@@ -1,10 +1,11 @@
+{% load static %}
 <!doctype html>
 <html lang="pt-br">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}Cardápio e seus valores{% endblock %}</title>
-    <link rel="stylesheet" href="/static/core/css/app.css">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <script src="https://unpkg.com/htmx.org@1.10.0"></script>
   </head>
   <body>

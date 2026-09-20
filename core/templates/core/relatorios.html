@@ -1,12 +1,35 @@
-{% extends "core/base.html" %}
-
-{% block title %}Relatórios — Cardápio e seus valores{% endblock %}
-
-{% block header %}Relatórios{% endblock %}
-
-{% block content %}
-  <div class="panel">
-    <h3>Relatórios e KPIs</h3>
-    <p>KPIs mock: faturamento diário, ticket médio, pedidos ativos (esqueleto)</p>
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sabor Tech | Relatórios</title>
+  <link rel="stylesheet" href="{% static 'css/relatorios.css' %}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4"></script>
+</head>
+<body class="reports-page">
+  <div class="reports-shell">
+    <aside class="reports-sidebar">
+      <div class="reports-brand"><span>+</span><div><strong>Sabor Tech</strong><small>GESTÃO INTELIGENTE</small></div></div>
+      <nav><a href="{% url 'core:home' %}">Home</a><a href="{% url 'core:dashboard' %}">Dashboard</a><a href="{% url 'core:pedidos' %}">Pedidos</a><a href="{% url 'core:produtos' %}">Cardápio</a><a href="{% url 'core:receitas' %}">Adicionar receitas</a><a class="active" href="{% url 'core:relatorios' %}">Relatórios</a></nav>
+      <form method="post" action="{% url 'core:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form>
+    </aside>
+    <main class="reports-main">
+      <header class="reports-header"><div><p class="reports-eyebrow">INTELIGÊNCIA OPERACIONAL</p><h1>Relatórios</h1><p>Entenda o desempenho do restaurante e tome decisões com mais segurança.</p></div><div class="report-actions"><button type="button" class="secondary-button" id="exportCsv">Exportar Excel</button><button type="button" class="primary-button" id="printReport">Exportar PDF</button></div></header>
+      <section class="report-filters"><label>Período<select id="periodFilter"><option value="week">Esta semana</option><option value="day">Hoje</option><option value="month">Este mês</option><option value="year">Este ano</option></select></label><label>Categoria<select id="categoryFilter"><option>Todas</option><option>Pizzas</option><option>Massas</option><option>Bebidas</option></select></label><label>Perfil<select id="profileFilter"><option>Todos</option><option>Delivery</option><option>Presencial</option></select></label><span class="updated-label">Atualizado agora</span></section>
+      <section class="kpi-grid"><article class="kpi-card sales"><span>Receita total</span><strong>R$ 38.420</strong><small>↑ 12,8% contra período anterior</small></article><article class="kpi-card costs"><span>Custo dos insumos</span><strong>R$ 14.620</strong><small>38,1% da receita total</small></article><article class="kpi-card profit"><span>Lucro líquido</span><strong>R$ 23.800</strong><small>Margem de 61,9%</small></article><article class="kpi-card waste"><span>Desperdício</span><strong>4,8%</strong><small class="negative">↓ 1,2% este mês</small></article><article class="kpi-card time"><span>Tempo médio</span><strong>18 min</strong><small>2 min mais rápido</small></article></section>
+      <section class="charts-grid"><article class="chart-panel chart-wide"><header><div><span class="chart-label">PERFORMANCE</span><h2>Vendas, custos e lucro</h2></div><span class="legend"><i class="sales-dot"></i>Vendas <i class="cost-dot"></i>Custos <i class="profit-dot"></i>Lucro</span></header><div class="chart-box"><canvas id="performanceChart"></canvas></div></article><article class="chart-panel"><header><div><span class="chart-label">CARDÁPIO</span><h2>Mais vendidos</h2></div></header><div class="chart-box"><canvas id="dishesChart"></canvas></div></article><article class="chart-panel"><header><div><span class="chart-label">INSUMOS</span><h2>Uso por categoria</h2></div></header><div class="chart-box pie-box"><canvas id="ingredientsChart"></canvas></div></article><article class="chart-panel chart-wide"><header><div><span class="chart-label">MOVIMENTO</span><h2>Horários de maior movimento</h2></div><span class="heat-legend">Menos <i></i><i></i><i></i><i></i> Mais</span></header><div class="heatmap" id="heatmap"></div><div class="heat-hours"><span>10h</span><span>12h</span><span>14h</span><span>16h</span><span>18h</span><span>20h</span><span>22h</span></div></article></section>
+      <section class="insights"><div class="insight-heading"><span>ANÁLISES PREDITIVAS</span><h2>Próximas decisões</h2></div><article><span class="insight-icon">↗</span><div><strong>Previsão de demanda</strong><p>O sábado deve ter 18% mais pedidos. Reforce a equipe entre 18h e 21h.</p></div></article><article><span class="insight-icon">◒</span><div><strong>Previsão de insumos</strong><p>Compre 12 kg de queijo e 8 kg de farinha para cobrir o próximo fim de semana.</p></div></article><article><span class="insight-icon">!</span><div><strong>Anomalia detectada</strong><p>O desperdício de tomate subiu 9% desde terça-feira. Vale revisar o preparo.</p></div></article></section>
+    </main>
   </div>
-{% endblock %}
+  {{ report_data|json_script:'report-data' }}
+  <script>
+    const data = JSON.parse(document.querySelector('#report-data').textContent); const colors = { teal: '#0aa39a', red: '#db746d', green: '#45a778', blue: '#4c86c6' }; const axis = { color: '#91a0a3', grid: '#edf2f0' };
+    new Chart(document.querySelector('#performanceChart'), { type: 'line', data: { labels: data.labels, datasets: [{ label: 'Vendas', data: data.sales, borderColor: colors.blue, backgroundColor: 'rgba(76,134,198,.1)', fill: true, tension: .38 }, { label: 'Custos', data: data.costs, borderColor: colors.red, tension: .38 }, { label: 'Lucro', data: data.profits, borderColor: colors.green, tension: .38 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: axis.grid }, ticks: { color: axis.color, callback: (value) => 'R$ ' + (value / 1000) + 'k' } }, x: { grid: { display: false }, ticks: { color: axis.color } } } } });
+    new Chart(document.querySelector('#dishesChart'), { type: 'bar', data: { labels: data.dishes, datasets: [{ data: data.dish_values, backgroundColor: ['#0aa39a', '#55b7a5', '#8bcdbd', '#b9ded2', '#d4eae2'], borderRadius: 5 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: axis.grid }, ticks: { color: axis.color } }, y: { grid: { display: false }, ticks: { color: axis.color } } } } });
+    new Chart(document.querySelector('#ingredientsChart'), { type: 'doughnut', data: { labels: data.ingredients, datasets: [{ data: data.ingredient_values, backgroundColor: ['#0aa39a', '#4c86c6', '#f2b45c', '#db746d', '#9aa9d6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '66%', plugins: { legend: { position: 'bottom', labels: { color: axis.color, boxWidth: 10, padding: 12 } } } } });
+    const heat = document.querySelector('#heatmap'); data.heatmap.forEach((value, index) => { for (let day = 0; day < 7; day++) { const cell = document.createElement('span'); cell.style.opacity = .18 + (value / 28) * .82; cell.title = `${10 + index}h · ${value + day} pedidos`; heat.appendChild(cell); } });
+    document.querySelector('#printReport').addEventListener('click', () => window.print()); document.querySelector('#exportCsv').addEventListener('click', () => { const csv = 'Indicador,Valor\nReceita total,R$ 38.420\nCusto dos insumos,R$ 14.620\nLucro líquido,R$ 23.800\nDesperdício,4.8%\nTempo médio,18 min'; const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = 'relatorio-sabor-tech.csv'; link.click(); });
+  </script>
+</body>
+</html>

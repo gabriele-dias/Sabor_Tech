@@ -1,0 +1,121 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sabor Tech | Pedidos</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pedidos.css' %}">
+  </head>
+  <body class="orders-page">
+    <div class="pedidos-page">
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-icon">&#127869;</div>
+          <div>
+            <h2>Sabor Tech</h2>
+            <span>GESTÃO INTELIGENTE</span>
+          </div>
+        </div>
+
+        <nav class="sidebar-menu">
+          <a href="#" class="menu-item active"><span>▦</span>Todos</a>
+          <a href="#" class="menu-item" data-filter="pizzas"><span>🍕</span>Pizzas</a>
+          <a href="#" class="menu-item" data-filter="lanches"><span>🍔</span>Lanches</a>
+          <a href="#" class="menu-item" data-filter="bebidas"><span>🥤</span>Bebidas</a>
+          <a href="#" class="menu-item" data-filter="sobremesas"><span>🍰</span>Sobremesas</a>
+          <a href="#" class="menu-item" data-filter="porcoes"><span>🍟</span>Porções</a>
+          <a href="#" class="menu-item" data-filter="combos"><span>🏷</span>Combos</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <form class="logout-form" method="post" action="{% url 'core:logout' %}">
+            {% csrf_token %}
+            <button class="logout-link" type="submit">↪ Sair</button>
+          </form>
+        </div>
+      </aside>
+
+      <main class="produtos-area">
+        <header class="pedidos-header">
+          <div class="search-box">
+            <span>⌕</span>
+            <input type="search" id="buscaProduto" placeholder="Buscar produtos..." aria-label="Buscar produtos">
+          </div>
+          <div class="usuario-box">
+            <div class="usuario-avatar">{{ request.user.username|first|upper }}</div>
+            <div><strong>{{ request.user.username }}</strong><span>Administrador</span></div>
+          </div>
+        </header>
+
+        <div class="produtos-title">
+          <div><span class="section-label">TODOS OS PRODUTOS</span><h1>Cardápio</h1></div>
+          <div class="view-buttons"><button type="button" class="active" aria-label="Visualização em grade">▦</button><button type="button" aria-label="Visualização em lista">☰</button></div>
+        </div>
+
+        <section class="produtos-grid" id="produtosGrid">
+          <article class="produto-card" data-categoria="pizzas" data-nome="Pizza Calabresa"><div class="produto-image pizza-calabresa">🍕</div><div class="produto-info"><h3>Pizza Calabresa</h3><p>Calabresa, queijo e cebola</p><div class="produto-bottom"><strong>R$ 59,90</strong><button type="button" data-produto="Pizza Calabresa" data-preco="59.90" aria-label="Adicionar Pizza Calabresa">+</button></div></div></article>
+          <article class="produto-card" data-categoria="pizzas" data-nome="Pizza Marguerita"><div class="produto-image pizza-marguerita">🍕</div><div class="produto-info"><h3>Pizza Marguerita</h3><p>Queijo, tomate e manjericão</p><div class="produto-bottom"><strong>R$ 54,90</strong><button type="button" data-produto="Pizza Marguerita" data-preco="54.90" aria-label="Adicionar Pizza Marguerita">+</button></div></div></article>
+          <article class="produto-card" data-categoria="pizzas" data-nome="Frango com Catupiry"><div class="produto-image pizza-frango">🍕</div><div class="produto-info"><h3>Frango com Catupiry</h3><p>Frango, queijo e catupiry</p><div class="produto-bottom"><strong>R$ 62,90</strong><button type="button" data-produto="Frango com Catupiry" data-preco="62.90" aria-label="Adicionar Frango com Catupiry">+</button></div></div></article>
+          <article class="produto-card" data-categoria="pizzas" data-nome="Pizza Portuguesa"><div class="produto-image pizza-portuguesa">🍕</div><div class="produto-info"><h3>Pizza Portuguesa</h3><p>Presunto, ovos, queijo e cebola</p><div class="produto-bottom"><strong>R$ 61,90</strong><button type="button" data-produto="Pizza Portuguesa" data-preco="61.90" aria-label="Adicionar Pizza Portuguesa">+</button></div></div></article>
+          <article class="produto-card" data-categoria="lanches" data-nome="X-Bacon"><div class="produto-image lanche">🍔</div><div class="produto-info"><h3>X-Bacon</h3><p>Hambúrguer, bacon e queijo</p><div class="produto-bottom"><strong>R$ 34,90</strong><button type="button" data-produto="X-Bacon" data-preco="34.90" aria-label="Adicionar X-Bacon">+</button></div></div></article>
+          <article class="produto-card" data-categoria="lanches" data-nome="X-Salada"><div class="produto-image lanche">🍔</div><div class="produto-info"><h3>X-Salada</h3><p>Hambúrguer, queijo e salada</p><div class="produto-bottom"><strong>R$ 32,90</strong><button type="button" data-produto="X-Salada" data-preco="32.90" aria-label="Adicionar X-Salada">+</button></div></div></article>
+          <article class="produto-card" data-categoria="lanches" data-nome="X-Egg Bacon"><div class="produto-image lanche">🍔</div><div class="produto-info"><h3>X-Egg Bacon</h3><p>Hambúrguer, ovo, bacon e queijo</p><div class="produto-bottom"><strong>R$ 36,90</strong><button type="button" data-produto="X-Egg Bacon" data-preco="36.90" aria-label="Adicionar X-Egg Bacon">+</button></div></div></article>
+          <article class="produto-card" data-categoria="lanches" data-nome="Frango Grelhado"><div class="produto-image lanche">🍔</div><div class="produto-info"><h3>Frango Grelhado</h3><p>Frango, queijo e salada</p><div class="produto-bottom"><strong>R$ 31,90</strong><button type="button" data-produto="Frango Grelhado" data-preco="31.90" aria-label="Adicionar Frango Grelhado">+</button></div></div></article>
+        </section>
+      </main>
+
+      <aside class="pedido-lateral">
+        <div class="mesa-header"><div><span>MESA</span><h2>Mesa 05</h2></div><button type="button">Alterar mesa</button></div>
+        <div id="listaPedido" class="pedido-lista"><div class="pedido-vazio"><span>🧾</span><p>Nenhum item adicionado</p><small>Clique no + de algum produto</small></div></div>
+        <div class="pedido-resumo">
+          <div class="resumo-linha"><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div>
+          <div class="resumo-linha"><span>Taxa de serviço (10%)</span><strong id="taxa">R$ 0,00</strong></div>
+          <div class="resumo-total"><span>TOTAL</span><strong id="total">R$ 0,00</strong></div>
+          <button type="button" class="concluir-button" id="concluirPedido">✓ Concluir Pedido</button>
+        </div>
+      </aside>
+    </div>
+
+    <script>
+      const pedido = [];
+      const moeda = (valor) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const lista = document.querySelector('#listaPedido');
+      const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+      function atualizarPedido() {
+        if (!pedido.length) {
+          lista.innerHTML = '<div class="pedido-vazio"><span>🧾</span><p>Nenhum item adicionado</p><small>Clique no + de algum produto</small></div>';
+        } else {
+          lista.innerHTML = pedido.map((item) => `<div class="pedido-item"><div class="pedido-quantidade">${item.quantidade}</div><div class="pedido-item-info"><strong>${item.nome}</strong><span>${moeda(item.preco * item.quantidade)}</span></div><button type="button" class="remover-item" data-remover="${item.nome}" aria-label="Remover ${item.nome}">×</button></div>`).join('');
+        }
+        const subtotal = pedido.reduce((sum, item) => sum + item.preco * item.quantidade, 0);
+        document.querySelector('#subtotal').textContent = moeda(subtotal);
+        document.querySelector('#taxa').textContent = moeda(subtotal * .1);
+        document.querySelector('#total').textContent = moeda(subtotal * 1.1);
+      }
+
+      document.querySelectorAll('[data-produto]').forEach((button) => button.addEventListener('click', () => {
+        const nome = button.dataset.produto;
+        const existente = pedido.find((item) => item.nome === nome);
+        existente ? existente.quantidade++ : pedido.push({ nome, preco: Number(button.dataset.preco), quantidade: 1 });
+        atualizarPedido();
+      }));
+      lista.addEventListener('click', (event) => { if (event.target.dataset.remover) { pedido.splice(pedido.findIndex((item) => item.nome === event.target.dataset.remover), 1); atualizarPedido(); } });
+      document.querySelector('#buscaProduto').addEventListener('input', (event) => { const termo = event.target.value.toLowerCase(); document.querySelectorAll('.produto-card').forEach((card) => { card.hidden = !card.dataset.nome.toLowerCase().includes(termo); }); });
+      document.querySelectorAll('[data-filter]').forEach((link) => link.addEventListener('click', (event) => { event.preventDefault(); const categoria = link.dataset.filter; document.querySelectorAll('.menu-item').forEach((item) => item.classList.remove('active')); link.classList.add('active'); document.querySelectorAll('.produto-card').forEach((card) => { card.hidden = card.dataset.categoria !== categoria; }); }));
+      document.querySelector('#concluirPedido').addEventListener('click', async () => {
+        if (!pedido.length) return;
+        const subtotal = pedido.reduce((sum, item) => sum + item.preco * item.quantidade, 0);
+        const button = document.querySelector('#concluirPedido');
+        button.disabled = true;
+        const response = await fetch('{% url "core:concluir_pedido" %}', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }, body: JSON.stringify({ items: pedido, subtotal, service_fee: subtotal * .1, total: subtotal * 1.1 }) });
+        if (response.ok) { alert('Pedido enviado para a administração.'); pedido.length = 0; atualizarPedido(); }
+        else { alert('Não foi possível concluir o pedido.'); }
+        button.disabled = false;
+      });
+    </script>
+  </body>
+</html>

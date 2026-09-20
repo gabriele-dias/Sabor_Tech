@@ -1,9 +1,8 @@
-<<<<<<< HEAD
 from decimal import Decimal
-
 from django.contrib.auth.models import Group, User
 from django.test import TestCase
 from django.urls import reverse
+import json
 
 from .calculations import (
     calculate_custo_por_pessoa,
@@ -29,6 +28,83 @@ class CoreAccessTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, '/login/?next=/')
+
+    def test_login_redirects_to_home(self):
+        user = User.objects.create_user(username='chef', email='chef@sabor.com', password='senha123')
+
+        response = self.client.post(
+            reverse('core:login'),
+            {'username': 'chef', 'password': 'senha123'},
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertRedirects(response, reverse('core:home'))
+
+    def test_waiter_login_redirects_to_orders(self):
+        user = User.objects.create_user(username='garcom', password='senha123')
+        group, _ = Group.objects.get_or_create(name='Garçom')
+        user.groups.add(group)
+
+        response = self.client.post(
+            reverse('core:login'),
+            {'username': 'garcom', 'password': 'senha123'},
+        )
+
+        self.assertRedirects(response, reverse('core:pedidos'))
+
+    def test_management_user_cannot_open_orders(self):
+        user = User.objects.create_user(username='gestao', password='senha123')
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('core:pedidos'))
+
+        self.assertRedirects(response, reverse('core:home'))
+
+    def test_waiter_is_limited_to_orders(self):
+        user = User.objects.create_user(username='garcom_limitado', password='senha123')
+        group, _ = Group.objects.get_or_create(name='Garçom')
+        user.groups.add(group)
+        self.client.force_login(user)
+
+        for route_name in ('home', 'dashboard', 'produtos', 'relatorios'):
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(f'core:{route_name}'))
+                self.assertRedirects(response, reverse('core:pedidos'))
+
+    def test_logout_redirects_to_login(self):
+        user = User.objects.create_user(username='logout_user', password='senha123')
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('core:logout'))
+
+        self.assertRedirects(response, reverse('core:login'))
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
+
+    def test_waiter_order_is_saved_for_management(self):
+        user = User.objects.create_user(username='garcom_pedido', password='senha123')
+        group, _ = Group.objects.get_or_create(name='Garçom')
+        user.groups.add(group)
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse('core:concluir_pedido'),
+            data=json.dumps({
+                'items': [{'nome': 'Pizza Calabresa', 'preco': 59.9, 'quantidade': 1}],
+                'subtotal': 59.9,
+                'service_fee': 5.99,
+                'total': 65.89,
+            }),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.client.logout()
+        admin_user = User.objects.create_user(username='gestor_pedido', password='senha123')
+        self.client.force_login(admin_user)
+        dashboard = self.client.get(reverse('core:dashboard'))
+        self.assertContains(dashboard, 'Pizza Calabresa')
+        self.assertContains(dashboard, 'garcom_pedido')
 
 
 class OrderCalculationTests(TestCase):
@@ -112,8 +188,3 @@ class OrderCalculationTests(TestCase):
         self.assertEqual(response.context["media_vendas"], 72.25)
         self.assertContains(response, "Pizza Marguerita")
         self.assertContains(response, "farinha de trigo")
-=======
-from django.test import TestCase
-
-# Create your tests here.
->>>>>>> Parte_Front/main

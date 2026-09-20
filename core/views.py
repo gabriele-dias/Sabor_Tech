@@ -1,233 +1,214 @@
-<<<<<<< HEAD
-from datetime import date
-from django.contrib.auth.decorators import user_passes_test
-from django.shortcuts import render
-from django.utils import timezone
-
-
-def user_has_role(user, roles):
-	if not user.is_active:
-		return False
-	return user.groups.filter(name__in=roles).exists()
-
-
-def role_required(roles):
-	return user_passes_test(lambda u: user_has_role(u, roles), login_url='/login/')
-
-
-# Mock data stores (in-memory, for prototype only)
-ORDERS = [
-	{"id": 101, "cliente": "João Silva", "status": "Pendente", "atraso_min": 12, "valor": 45.50, "data": "2026-09-13", "custo_receita": 18.50, "lucro": 27.00},
-	{"id": 102, "cliente": "Maria Costa", "status": "Saiu para entrega", "atraso_min": 3, "valor": 67.00, "data": "2026-09-12", "custo_receita": 24.80, "lucro": 42.20},
-	{"id": 103, "cliente": "Pedro Alves", "status": "Atrasado", "atraso_min": 27, "valor": 32.00, "data": "2026-09-13", "custo_receita": 13.00, "lucro": 19.00},
-]
-
-CLIENTS = [
-	{"id": 1, "nome": "João Silva", "telefone": "(11) 99999-0001"},
-	{"id": 2, "nome": "Maria Costa", "telefone": "(11) 98888-1111"},
-]
-
-RECIPE = {
-	"nome": "Pizza",
-	"sabor": "Marguerita",
-	"ingredientes": [
-		{"quantidade": "1", "unidade": "kg", "nome": "farinha de trigo"},
-		{"quantidade": "3", "unidade": "unidades", "nome": "tomate"},
-		{"quantidade": "1/2", "unidade": "L", "nome": "óleo"},
-		{"quantidade": "500", "unidade": "g", "nome": "muçarela"},
-		{"quantidade": "a gosto", "unidade": "", "nome": "manjericão e sal"},
-	]
-}
-
-
-@role_required(['Gestão'])
-def dashboard(request):
-	"""Dashboard com filtro por período e médias diárias de desempenho."""
-	today = timezone.localdate()
-	date_start_value = request.GET.get("date_start") or request.GET.get("date") or today.isoformat()
-	date_end_value = request.GET.get("date_end") or date_start_value
-	try:
-		date_start = date.fromisoformat(date_start_value)
-		date_end = date.fromisoformat(date_end_value)
-	except ValueError:
-		date_start = date_end = today
-	if date_start > date_end:
-		date_start, date_end = date_end, date_start
-	date_start_value = date_start.isoformat()
-	date_end_value = date_end.isoformat()
-
-	pedidos = [
-		p for p in ORDERS
-		if date_start <= date.fromisoformat(p["data"]) <= date_end
-	]
-
-	clientes = [
-		{"nome": c["nome"], "mais_pedido": "Margherita", "tempo_medio": "30m"} for c in CLIENTS
-	]
-
-	total_vendas = sum(float(p["valor"]) for p in pedidos)
-	valor_custo = sum(float(p["custo_receita"]) for p in pedidos)
-	lucro_total = sum(float(p["lucro"]) for p in pedidos)
-	period_days = (date_end - date_start).days + 1
-
-	return render(request, "core/dashboard.html", {
-		"pedidos": pedidos,
-		"clientes": clientes,
-		"date_start": date_start_value,
-		"date_end": date_end_value,
-		"period_days": period_days,
-		"total_vendas": total_vendas,
-		"valor_custo": valor_custo,
-		"lucro_total": lucro_total,
-		"receita": RECIPE,
-		"media_vendas": total_vendas / period_days,
-		"media_custo": valor_custo / period_days,
-		"media_lucro": lucro_total / period_days,
-	})
-
-
-@role_required(['Gestão', 'Chefe de Cozinha'])
-def atendimento(request):
-	"""Página de atendimento (esqueleto)."""
-	return render(request, "core/atendimento.html", {"orders": ORDERS, "clients": CLIENTS})
-
-
-@role_required(['Gestão', 'Chefe de Cozinha'])
-def orders_partial(request):
-	"""Retorna o fragmento com a lista de pedidos, possivelmente filtrada."""
-	q = request.GET.get('q', '').lower()
-	status = request.GET.get('status', '')
-	filtered = ORDERS
-	if q:
-		filtered = [o for o in filtered if q in o['cliente'].lower() or q in str(o['id'])]
-	if status:
-		filtered = [o for o in filtered if o['status'] == status]
-	return render(request, "core/_orders.html", {"orders": filtered})
-
-
-@role_required(['Gestão', 'Chefe de Cozinha'])
-def change_status(request):
-	"""Altera o status de um pedido (POST via HTMx) e retorna o fragmento atualizado."""
-	if request.method == 'POST':
-		oid = int(request.POST.get('order_id'))
-		new_status = request.POST.get('new_status')
-		for o in ORDERS:
-			if o['id'] == oid:
-				o['status'] = new_status
-				break
-	return render(request, "core/_orders.html", {"orders": ORDERS})
-
-
-@role_required(['Gestão', 'Chefe de Cozinha'])
-def clients_partial(request):
-	return render(request, "core/_clients_list.html", {"clients": CLIENTS})
-
-
-@role_required(['Gestão', 'Chefe de Cozinha'])
-def add_client(request):
-	"""Adiciona cliente (POST via HTMx) e retorna a lista atualizada."""
-	if request.method == 'POST':
-		nome = request.POST.get('nome')
-		telefone = request.POST.get('telefone')
-		nid = max([c['id'] for c in CLIENTS]) + 1 if CLIENTS else 1
-		CLIENTS.append({"id": nid, "nome": nome, "telefone": telefone})
-	return render(request, "core/_clients_list.html", {"clients": CLIENTS})
-
-
-@role_required(['Gestão'])
-def clientes_page(request):
-	"""Lista de clientes (esqueleto)."""
-	clientes = [
-		{"nome": "João Silva", "telefone": "(11) 99999-0001"},
-		{"nome": "Maria Costa", "telefone": "(11) 98888-1111"},
-	]
-	return render(request, "core/clientes.html", {"clientes": clientes})
-
-
-@role_required(['Gestão'])
-def produtos_page(request):
-	"""Lista de produtos (esqueleto)."""
-	produtos = [
-		{"nome": "Margherita", "preco": 32.0},
-		{"nome": "Calabresa", "preco": 36.5},
-	]
-	return render(request, "core/produtos.html", {"produtos": produtos})
-
-
-@role_required(['Gestão'])
-def relatorios(request):
-	"""Página de relatórios (esqueleto)."""
-	return render(request, "core/relatorios.html")
-
-
-@role_required(['Gestão'])
-def configuracoes(request):
-	"""Página de configurações/admin (esqueleto)."""
-	return render(request, "core/configuracoes.html")
-=======
+from django.contrib.auth import views as auth_views
+from django.contrib.auth import logout
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from decimal import Decimal, InvalidOperation
+import json
+
+from .models import Order
+
+
+class RoleLoginView(auth_views.LoginView):
+    def get_success_url(self):
+        if is_waiter(self.request.user):
+            return reverse('core:pedidos')
+        return super().get_success_url()
+
+
+def is_waiter(user):
+    return user.groups.filter(name='Garçom').exists()
+
+
+def redirect_waiter(request):
+    if is_waiter(request.user):
+        return redirect('core:pedidos')
+    return None
+
+
+def logout_view(request):
+    logout(request)
+    return redirect('core:login')
 
 
 @login_required
 def pedidos(request):
-    return render(request, 'pedidos.html')
+    if not request.user.is_superuser and not is_waiter(request.user):
+        return redirect('core:home')
+    return render(request, 'core/pedidos.html')
+
+
+@login_required
+@require_POST
+def concluir_pedido(request):
+    if not is_waiter(request.user) and not request.user.is_superuser:
+        return JsonResponse({'error': 'Apenas garçons podem concluir pedidos.'}, status=403)
+
+    try:
+        payload = json.loads(request.body)
+        items = payload.get('items', [])
+        subtotal = Decimal(str(payload.get('subtotal', '0')))
+        service_fee = Decimal(str(payload.get('service_fee', '0')))
+        total = Decimal(str(payload.get('total', '0')))
+    except (json.JSONDecodeError, InvalidOperation, TypeError, ValueError):
+        return JsonResponse({'error': 'Dados do pedido inválidos.'}, status=400)
+
+    if not items or subtotal <= 0 or total <= 0:
+        return JsonResponse({'error': 'Adicione pelo menos um item ao pedido.'}, status=400)
+
+    order = Order.objects.create(
+        waiter=request.user,
+        items=items,
+        subtotal=subtotal,
+        service_fee=service_fee,
+        total=total,
+    )
+    return JsonResponse({'id': order.pk, 'message': 'Pedido enviado para a administração.'}, status=201)
 
 
 @login_required
 def dashboard(request):
-    return render(request, 'dashboard.html')
+    waiter_redirect = redirect_waiter(request)
+    if waiter_redirect:
+        return waiter_redirect
+    pedidos_mock = [
+        {
+            'id': 101,
+            'cliente': 'Maria Costa',
+            'data': '2026-09-12',
+            'valor': 45.5,
+            'status': 'Pendente',
+            'atraso_min': 12,
+            'custo_receita': 20.0,
+            'lucro': 25.5,
+        },
+        {
+            'id': 102,
+            'cliente': 'João Pereira',
+            'data': '2026-09-13',
+            'valor': 99.0,
+            'status': 'Entregue',
+            'atraso_min': 0,
+            'custo_receita': 45.0,
+            'lucro': 54.0,
+        },
+    ]
+    clientes = [
+        {'nome': 'Maria Costa', 'mais_pedido': 'Pizza Marguerita', 'tempo_medio': '18 min'},
+        {'nome': 'João Pereira', 'mais_pedido': 'Lasanha', 'tempo_medio': '22 min'},
+    ]
+    receita = {
+        'nome': 'Pizza Marguerita',
+        'sabor': 'Tradicional',
+        'ingredientes': [
+            {'quantidade': 500, 'unidade': 'g', 'nome': 'farinha de trigo'},
+            {'quantidade': 300, 'unidade': 'g', 'nome': 'molho de tomate'},
+        ],
+    }
+    total_vendas = sum(item['valor'] for item in pedidos_mock)
+    valor_custo = sum(item['custo_receita'] for item in pedidos_mock)
+    lucro_total = total_vendas - valor_custo
+    period_days = 2
+    date_start = request.GET.get('date_start', '2026-09-12')
+    date_end = request.GET.get('date_end', '2026-09-13')
+
+    context = {
+        'date_start': date_start,
+        'date_end': date_end,
+        'period_days': period_days,
+        'total_vendas': total_vendas,
+        'valor_custo': valor_custo,
+        'lucro_total': lucro_total,
+        'media_vendas': total_vendas / period_days,
+        'pedidos': pedidos_mock,
+        'clientes': clientes,
+        'receita': receita,
+        'orders_received': Order.objects.select_related('waiter')[:20],
+    }
+    return render(request, 'core/dashboard.html', context)
 
 
 def login_view(request):
-
     if request.method == 'POST':
-
         email = request.POST.get('email')
         senha = request.POST.get('senha')
 
         try:
             usuario = User.objects.get(email=email)
-
-            user = authenticate(
-                request,
-                username=usuario.username,
-                password=senha
-            )
-
+            user = authenticate(request, username=usuario.username, password=senha)
         except User.DoesNotExist:
             user = None
 
         if user is not None:
-
             login(request, user)
+            return redirect('core:home')
 
-            return redirect('pedidos')
+        messages.error(request, 'E-mail ou senha inválidos.')
 
-        else:
-
-            messages.error(
-                request,
-                'E-mail ou senha inválidos.'
-            )
-
-    return render(request, 'login.html')
+    return render(request, 'core/login.html', {'form': None})
 
 
 @login_required
 def produtos(request):
-    return render(request, 'produtos.html')
+    waiter_redirect = redirect_waiter(request)
+    if waiter_redirect:
+        return waiter_redirect
+    produtos = [
+        {'nome': 'Pizza Marguerita', 'categoria': 'Pizzas', 'descricao': 'Molho de tomate, mozzarella e manjericão.', 'preco': '54,90', 'emoji': '🍕', 'disponivel': True},
+        {'nome': 'Pizza Calabresa', 'categoria': 'Pizzas', 'descricao': 'Calabresa artesanal, cebola e mozzarella.', 'preco': '59,90', 'emoji': '🍕', 'disponivel': True},
+        {'nome': 'X-Bacon', 'categoria': 'Lanches', 'descricao': 'Hambúrguer, bacon crocante e queijo.', 'preco': '34,90', 'emoji': '🍔', 'disponivel': True},
+        {'nome': 'Lasanha da Casa', 'categoria': 'Massas', 'descricao': 'Camadas de massa, molho e queijo gratinado.', 'preco': '42,90', 'emoji': '🍝', 'disponivel': True},
+        {'nome': 'Suco Natural', 'categoria': 'Bebidas', 'descricao': 'Escolha o sabor do dia, servido bem gelado.', 'preco': '9,90', 'emoji': '🥤', 'disponivel': True},
+        {'nome': 'Brownie com Sorvete', 'categoria': 'Sobremesas', 'descricao': 'Brownie quente, sorvete e calda de chocolate.', 'preco': '18,90', 'emoji': '🍰', 'disponivel': False},
+    ]
+    return render(request, 'core/produtos.html', {'produtos': produtos})
+
+
+@login_required
+def receitas(request):
+    waiter_redirect = redirect_waiter(request)
+    if waiter_redirect:
+        return waiter_redirect
+    return render(request, 'core/receitas.html')
 
 
 @login_required
 def relatorios(request):
-    return render(request, 'relatorios.html')
+    waiter_redirect = redirect_waiter(request)
+    if waiter_redirect:
+        return waiter_redirect
+    orders = list(Order.objects.order_by('created_at')[:30])
+    report_data = {
+        'labels': ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+        'sales': [4200, 5100, 4800, 6300, 7200, 8400, 7900],
+        'costs': [1700, 2100, 1950, 2600, 3050, 3520, 3300],
+        'profits': [2500, 3000, 2850, 3700, 4150, 4880, 4600],
+        'dishes': ['Pizza Marguerita', 'Lasanha', 'X-Bacon', 'Pizza Calabresa', 'Suco Natural'],
+        'dish_values': [142, 118, 96, 84, 71],
+        'ingredients': ['Farinha', 'Queijo', 'Tomate', 'Carne', 'Bebidas'],
+        'ingredient_values': [31, 25, 18, 15, 11],
+        'heatmap': [2, 4, 7, 11, 15, 22, 28, 25, 18, 12, 7, 4],
+    }
+    if orders:
+        total = sum(float(order.total) for order in orders)
+        report_data['sales'][-1] = round(total, 2)
+        report_data['costs'][-1] = round(total * 0.38, 2)
+        report_data['profits'][-1] = round(total * 0.62, 2)
+    return render(request, 'core/relatorios.html', {
+        'report_data': report_data,
+        'orders_count': len(orders) or 148,
+        'orders_received': orders,
+    })
 
 
 @login_required
 def home(request):
-    return render(request, 'home.html')
->>>>>>> Parte_Front/main
+    waiter_redirect = redirect_waiter(request)
+    if waiter_redirect:
+        return waiter_redirect
+    return render(request, 'core/home.html')

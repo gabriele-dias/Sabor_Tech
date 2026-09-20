@@ -4,32 +4,35 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Entrar — Cardápio e seus valores</title>
-    <link rel="stylesheet" href="/static/core/css/app.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
   </head>
-  <body class="login-page">
+  <body class="login-page teal-background">
     <main class="login-card">
       <section class="login-intro">
         <div class="login-brand">
-          <span class="brand-mark">+</span>
-          <span>Cardápio <em>e seus valores</em></span>
+            <span class="brand-mark">&#127869;</span>
+            <span>Sabor <strong>Tech</strong><small>GESTÃO INTELIGENTE</small></span>
         </div>
+
         <div class="login-intro-content">
-          <p class="login-kicker">GESTÃO DE COZINHA</p>
-          <h1>O sabor começa<br>na organização.</h1>
-          <p>Calcule custos, organize receitas e cuide do seu cardápio com mais clareza.</p>
+          <h1>Gestão mais simples.<br>Restaurante mais eficiente.</h1>
+          <p>Controle seus pedidos, mesas e operações em um único lugar.</p>
         </div>
       </section>
 
       <section class="login-panel">
-        <p class="login-eyebrow">Bem-vindo(a) de volta</p>
-        <h2>Entre no seu restaurante</h2>
-        <p class="login-description">Acesse as ferramentas do seu cardápio.</p>
-
-        <form method="post" class="login-form">
+        <form method="post" class="login-form" novalidate>
           {% csrf_token %}
 
+          <div class="form-header-inline">
+            <p class="login-eyebrow">BEM-VINDO(A)</p>
+            <h2>Entrar na sua conta</h2>
+            <p class="login-description">Acesse o sistema para gerenciar seu restaurante.</p>
+          </div>
+
           <div class="field">
-            <label for="{{ form.username.id_for_label }}">Usuário</label>
+            <label for="{{ form.username.id_for_label }}">E-mail</label>
             {{ form.username }}
           </div>
 
@@ -38,21 +41,26 @@
               <label for="{{ form.password.id_for_label }}">Senha</label>
               <a href="#">Esqueci minha senha</a>
             </div>
-            {{ form.password }}
+            <div class="password-wrap">
+              {{ form.password }}
+              <button type="button" class="toggle-password" aria-label="Mostrar senha">Mostrar</button>
+            </div>
           </div>
-
-          <button type="submit" class="btn">
-            <span>Entrar</span>
-            <span aria-hidden="true">→</span>
-          </button>
 
           {% if form.non_field_errors %}
             <div class="errors">{{ form.non_field_errors }}</div>
           {% endif %}
+
+          <button type="submit" class="btn login-btn">
+            <span class="btn-text">Entrar</span>
+            <span class="btn-icon" aria-hidden="true">→</span>
+          </button>
         </form>
 
-        <p class="login-access">Ainda não possui uma conta? <a href="#">Cadastrar nova conta</a></p>
+        <p class="login-access">Não possui uma conta? <a href="#">Solicite seu acesso</a></p>
       </section>
     </main>
+
+    <script src="{% static 'js/main.js' %}"></script>
   </body>
 </html>
