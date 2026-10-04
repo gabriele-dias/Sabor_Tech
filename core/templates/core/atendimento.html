@@ -1,52 +1,80 @@
-{% extends "core/base.html" %}
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sabor Tech | Atendimento</title>
+  <link rel="stylesheet" href="{% static 'css/operacao.css' %}">
+</head>
+<body>
+  <div class="ops-shell">
+    <aside class="ops-sidebar">
+      <div class="ops-brand"><span class="ops-brand-mark">+</span><div><strong>Sabor Tech</strong><small>GESTÃO INTELIGENTE</small></div></div>
+      <nav class="ops-nav" aria-label="Navegação principal">
+        <a href="{% url 'core:home' %}">Home</a>
+        <a class="active" href="{% url 'core:atendimento' %}">Atendimento</a>
+        {% if can_access_orders %}<a href="{% url 'core:pedidos' %}">Pedidos</a>{% endif %}
+        <a href="{% url 'core:produtos' %}">Cardápio</a>
+        <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
+        {% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}
+        <a href="{% url 'core:relatorios' %}">Relatórios</a>
+        {% if can_manage_staff %}<a href="{% url 'core:funcionarios' %}">Funcionários</a>{% endif %}
+      </nav>
+      <form class="ops-logout" method="post" action="{% url 'core:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form>
+    </aside>
 
-{% block title %}Atendimento — Cardápio e seus valores{% endblock %}
+    <main class="ops-main">
+      <header class="ops-header">
+        <div><p class="ops-eyebrow">OPERAÇÃO DO RESTAURANTE</p><h1>Atendimento</h1><p>Acompanhe mesas, status e entregas em tempo real.</p></div>
+        <a class="ops-back" href="{% url 'core:home' %}">← Voltar à Home</a>
+      </header>
 
-{% block header %}Atendimento{% endblock %}
+      <section class="ops-stats" aria-label="Resumo do atendimento">
+        <article class="ops-stat"><span>Mesas ocupadas</span><strong>{{ occupied_count|stringformat:"02d" }} <span class="stat-total">/ {{ table_count }}</span></strong><small>Agora</small></article>
+        <article class="ops-stat"><span>Pedidos em preparo</span><strong>{{ prep_count|stringformat:"02d" }}</strong><small>Agora</small></article>
+        <article class="ops-stat"><span>Entregas em rota</span><strong>{{ delivery_count|stringformat:"02d" }}</strong><small>Acompanhar</small></article>
+        <article class="ops-stat"><span>Tempo médio</span><strong>{{ average_minutes }} min</strong><small>Pedidos ativos</small></article>
+      </section>
 
-{% block content %}
-  <div class="panel">
-    <div style="display:flex;gap:0.5rem;align-items:center">
-      <input id="q" name="q" placeholder="Pesquisar por cliente ou nº pedido" style="flex:1;padding:0.5rem;border-radius:6px;border:1px solid rgba(0,0,0,0.08)" />
-      <select id="statusFilter" style="padding:0.5rem;border-radius:6px;border:1px solid rgba(0,0,0,0.08)">
-        <option value="">Todos</option>
-        <option value="Pendente">Pendente</option>
-        <option value="Saiu para entrega">Saiu para entrega</option>
-        <option value="Atrasado">Atrasado</option>
-        <option value="Entregue">Entregue</option>
-      </select>
-      <button id="searchBtn" class="btn">Buscar</button>
-    </div>
+      <form class="ops-controls" method="get">
+        <input type="search" name="q" value="{{ search_term }}" placeholder="Buscar cliente ou pedido..." aria-label="Buscar cliente ou pedido">
+        <select name="status" aria-label="Filtrar por status">
+          <option value="">Todos os status</option>
+          {% for option in status_options %}<option value="{{ option }}" {% if status_filter == option %}selected{% endif %}>{{ option }}</option>{% endfor %}
+        </select>
+        <button type="submit">Buscar</button>
+      </form>
 
-    <div style="margin-top:1rem">
-      <div id="ordersContainer" hx-get="/atendimento/orders/" hx-trigger="load" hx-swap="innerHTML">
-        <!-- orders partial will load here -->
-      </div>
-    </div>
+      <section class="service-layout">
+        <article class="ops-panel">
+          <header class="ops-panel-heading"><div><p class="ops-eyebrow">ACOMPANHAMENTO</p><h2>Pedidos ativos</h2></div><p>{{ orders_count }} pedidos</p></header>
+          <div class="ops-table">
+            {% for order in orders %}
+              <article class="order-row">
+                <span class="order-number">#{{ order.id }}</span>
+                <div class="order-info"><strong>{{ order.customer }}</strong><small>{% if order.table_number %}Mesa {{ order.table_number|stringformat:"02d" }}{% else %}{{ order.channel }}{% endif %} · {{ order.channel }} · {{ order.created_label }}</small></div>
+                <strong class="order-total">{{ order.total_label }}</strong>
+                <span class="order-status {{ order.status_class }}">{{ order.status }}</span>
+                <span class="order-more" aria-hidden="true">···</span>
+              </article>
+            {% empty %}
+              <p class="empty-state">Nenhum pedido encontrado. Os pedidos recebidos aparecerão aqui.</p>
+            {% endfor %}
+          </div>
+        </article>
+
+        <article class="ops-panel">
+          <header class="ops-panel-heading"><div><p class="ops-eyebrow">SALÃO</p><h2>Mesas</h2></div><span class="table-count">{{ table_count }} totais</span></header>
+          <div class="table-grid">
+            {% for table in tables %}
+              <div class="table-tile{% if table.occupied %} occupied{% endif %}"><strong>{{ table.number|stringformat:"02d" }}</strong><small>{% if table.occupied %}Ocupada{% else %}Livre{% endif %}</small></div>
+            {% endfor %}
+          </div>
+          <p class="table-legend"><span><i class="legend-dot"></i>Ocupada</span><span><i class="legend-dot free"></i>Livre</span></p>
+        </article>
+      </section>
+    </main>
   </div>
-
-  <div class="panel" style="margin-top:1rem">
-    <h4>Clientes</h4>
-    <form hx-post="/atendimento/clients/add/" hx-target="#clientsList" hx-swap="innerHTML" onsubmit="return false;">
-      <label>NOME</label>
-      <input name="nome" required />
-      <label>TELEFONE</label>
-      <input name="telefone" />
-      <button type="submit" class="btn" style="margin-top:0.5rem">Adicionar Cliente</button>
-    </form>
-
-    <div id="clientsList" hx-get="/atendimento/clients/" hx-trigger="load" hx-swap="innerHTML" style="margin-top:0.75rem">
-      <!-- clients partial -->
-    </div>
-  </div>
-
-  <script>
-    document.getElementById('searchBtn').addEventListener('click', function(){
-      const q = document.getElementById('q').value
-      const status = document.getElementById('statusFilter').value
-      const url = '/atendimento/orders/?q=' + encodeURIComponent(q) + '&status=' + encodeURIComponent(status)
-      htmx.ajax('GET', url, {target:'#ordersContainer', swap:'innerHTML'})
-    })
-  </script>
-
-{% endblock %}
+</body>
+</html>

@@ -14,6 +14,9 @@ body { min-height: 100vh; font-family: 'Inter', sans-serif; color: #263b44; back
 .menu-item:hover, .menu-item.active { color: #078d89; background: #e8f7f6; }
 .menu-item.active { font-weight: 600; }
 .sidebar-bottom { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+.orders-page-nav summary { color: #87999f; cursor: pointer; font-size: 12px; }
+.orders-page-nav div { max-height: 220px; overflow-y: auto; }
+.orders-page-nav div a { display: block; padding: 5px 0; }
 .sidebar-bottom a { color: #87999f; text-decoration: none; font-size: 12px; }
 .sidebar-bottom a:hover { color: #078d89; }
 .logout-form { margin: 0; }
@@ -26,6 +29,7 @@ body { min-height: 100vh; font-family: 'Inter', sans-serif; color: #263b44; back
 .search-box input { width: 100%; height: 46px; padding: 0 15px 0 43px; border: 1px solid #e0e8e9; border-radius: 9px; outline: none; background: #fff; font: inherit; font-size: 13px; }
 .search-box input:focus { border-color: #0aa39e; box-shadow: 0 0 0 3px rgba(10, 163, 158, .08); }
 .add-item-button { height: 46px; padding: 0 20px; border: 0; border-radius: 9px; color: #fff; background: #0aa39e; cursor: pointer; font-weight: 600; white-space: nowrap; }
+.orders-home-link { display: inline-flex; align-items: center; text-decoration: none; }
 .add-item-button:hover, .concluir-button:hover { background: #078d89; }
 .usuario-box { display: flex; align-items: center; gap: 10px; min-width: 120px; }
 .usuario-avatar { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: #078d89; background: #e8f7f6; font-weight: 700; }

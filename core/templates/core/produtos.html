@@ -12,7 +12,7 @@
       <aside class="menu-sidebar">
         <div class="menu-brand"><span>+</span><div><strong>Sabor Tech</strong><small>GESTÃO INTELIGENTE</small></div></div>
         <nav class="menu-nav">
-          <a href="{% url 'core:home' %}">Home</a><a href="{% url 'core:dashboard' %}">Dashboard</a><a href="{% url 'core:pedidos' %}">Pedidos</a><a class="active" href="{% url 'core:produtos' %}">Cardápio</a><a href="{% url 'core:receitas' %}">Adicionar receitas</a><a href="{% url 'core:relatorios' %}">Relatórios</a>
+          <a href="{% url 'core:home' %}">Home</a><a href="{% url 'core:atendimento' %}">Atendimento</a>{% if can_access_orders %}<a href="{% url 'core:pedidos' %}">Pedidos</a>{% endif %}<a class="active" href="{% url 'core:produtos' %}">Cardápio</a><a href="{% url 'core:receitas' %}">Adicionar receitas</a>{% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}<a href="{% url 'core:relatorios' %}">Relatórios</a>{% if can_manage_staff %}<a href="{% url 'core:funcionarios' %}">Funcionários</a>{% endif %}
         </nav>
         <form method="post" action="{% url 'core:logout' %}" class="menu-logout">{% csrf_token %}<button type="submit">Sair</button></form>
       </aside>
@@ -20,7 +20,7 @@
       <main class="menu-main">
         <header class="menu-header">
           <div><p class="menu-eyebrow">CATÁLOGO DO RESTAURANTE</p><h1>Cardápio</h1><p>Organize seus produtos, preços e disponibilidade em um só lugar.</p></div>
-          <button class="primary-button" type="button" id="newProductButton">+ Novo produto</button>
+          <div class="menu-header-actions"><a class="menu-home-link" href="{% url 'core:home' %}">← Voltar à Home</a><button class="primary-button" type="button" id="newProductButton">+ Novo produto</button></div>
         </header>
         <section class="menu-toolbar">
           <label class="menu-search"><span>⌕</span><input id="menuSearch" type="search" placeholder="Buscar no cardápio..." aria-label="Buscar no cardápio"></label>
@@ -42,7 +42,7 @@
       const cards = [...document.querySelectorAll('.menu-card')]; const search = document.querySelector('#menuSearch'); const count = document.querySelector('#productCount'); let category = 'Todos';
       function filterMenu() { const term = search.value.toLowerCase(); let visible = 0; cards.forEach((card) => { const match = (category === 'Todos' || card.dataset.category === category) && card.dataset.name.includes(term); card.hidden = !match; if (match) visible++; }); count.textContent = visible; document.querySelector('#emptyMenu').hidden = visible !== 0; }
       document.querySelectorAll('[data-category]').forEach((button) => button.addEventListener('click', () => { category = button.dataset.category; document.querySelectorAll('[data-category]').forEach((item) => item.classList.remove('active')); button.classList.add('active'); filterMenu(); })); search.addEventListener('input', filterMenu);
-      document.querySelector('#newProductButton').addEventListener('click', () => alert('Cadastro de novo produto disponível na próxima etapa.'));
+      document.querySelector('#newProductButton').addEventListener('click', () => { window.location.href = "{% url 'core:receitas' %}"; });
     </script>
   </body>
 </html>

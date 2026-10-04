@@ -1,0 +1,92 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sabor Tech | Desempenho cozinha</title>
+  <link rel="stylesheet" href="{% static 'css/operacao.css' %}">
+  <link rel="stylesheet" href="{% static 'css/desempenho.css' %}">
+</head>
+<body>
+  <div class="ops-shell">
+    <aside class="ops-sidebar">
+      <div class="ops-brand"><span class="ops-brand-mark">+</span><div><strong>Sabor Tech</strong><small>GESTÃO INTELIGENTE</small></div></div>
+      <nav class="ops-nav" aria-label="Navegação principal">
+        <a href="{% url 'core:home' %}">Home</a>
+        <a href="{% url 'core:atendimento' %}">Atendimento</a>
+        {% if can_access_orders %}<a href="{% url 'core:pedidos' %}">Pedidos</a>{% endif %}
+        <a href="{% url 'core:produtos' %}">Cardápio</a>
+        <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
+        <a class="active" href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>
+        <a href="{% url 'core:relatorios' %}">Relatórios</a>
+        {% if can_manage_staff %}<a href="{% url 'core:funcionarios' %}">Funcionários</a>{% endif %}
+      </nav>
+      <form class="ops-logout" method="post" action="{% url 'core:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form>
+    </aside>
+
+    <main class="ops-main kitchen-main">
+      <header class="ops-header">
+        <div><p class="ops-eyebrow">GESTÃO DA COZINHA</p><h1>Desempenho</h1><p>Acompanhe os preparos feitos por cozinheiros e auxiliares.</p></div>
+        <div class="kitchen-header-actions">
+          {% if can_record_preparation %}
+            <details class="kitchen-entry" {% if form.errors %}open{% endif %}>
+              <summary>+ Registrar preparo</summary>
+              <form method="post" class="kitchen-entry-form">
+                {% csrf_token %}
+                <label>Preparo {{ form.dish_name }}{% for error in form.dish_name.errors %}<small class="form-errors">{{ error }}</small>{% endfor %}</label>
+                <label>Status {{ form.status }}{% for error in form.status.errors %}<small class="form-errors">{{ error }}</small>{% endfor %}</label>
+                <label>Duração (min) {{ form.duration_minutes }}{% for error in form.duration_minutes.errors %}<small class="form-errors">{{ error }}</small>{% endfor %}</label>
+                <button class="kitchen-submit" type="submit">Salvar preparo</button>
+              </form>
+            </details>
+          {% endif %}
+          <a class="ops-back" href="{% url 'core:home' %}">← Voltar à Home</a>
+        </div>
+      </header>
+
+      {% if messages %}{% for message in messages %}<p class="form-messages">{{ message }}</p>{% endfor %}{% endif %}
+
+      <section class="ops-stats" aria-label="Indicadores da cozinha">
+        <article class="ops-stat"><span>Preparos hoje</span><strong>{{ preparation_count|stringformat:"02d" }}</strong><small>Registros do dia</small></article>
+        <article class="ops-stat"><span>Tempo médio</span><strong>{{ average_duration }} min</strong><small>Preparos concluídos</small></article>
+        <article class="ops-stat"><span>Cozinheiros ativos</span><strong>{{ active_cooks|stringformat:"02d" }}</strong><small>Contas ativas</small></article>
+        <article class="ops-stat"><span>Auxiliares ativos</span><strong>{{ active_assistants|stringformat:"02d" }}</strong><small>Contas ativas</small></article>
+      </section>
+
+      <section class="ops-panel kitchen-panel">
+        <header class="kitchen-panel-heading">
+          <div><p class="ops-eyebrow">PRODUÇÃO</p><h2>Preparos realizados</h2></div>
+          <form method="get" class="kitchen-filter">
+            <select name="perfil" aria-label="Filtrar equipe da cozinha">
+              <option value="todos" {% if profile_filter == 'todos' %}selected{% endif %}>Todos da cozinha</option>
+              <option value="cozinheiros" {% if profile_filter == 'cozinheiros' %}selected{% endif %}>Cozinheiros</option>
+              <option value="auxiliares" {% if profile_filter == 'auxiliares' %}selected{% endif %}>Auxiliares</option>
+            </select>
+            <button type="submit">Filtrar</button>
+          </form>
+        </header>
+        <div class="kitchen-table-wrap">
+          <table class="kitchen-table">
+            <thead><tr><th>Preparo</th><th>Responsável</th><th>Perfil</th><th>Horário</th><th>Duração</th><th>Status</th></tr></thead>
+            <tbody>
+              {% for preparation in preparations %}
+                <tr>
+                  <td class="kitchen-dish">{{ preparation.dish_name }}</td>
+                  <td>{{ preparation.responsible.get_full_name|default:preparation.responsible.username }}</td>
+                  <td><span class="kitchen-profile {{ preparation.profile_label|slugify }}">{{ preparation.profile_label }}</span></td>
+                  <td>{{ preparation.created_label }}</td>
+                  <td class="kitchen-duration">{{ preparation.duration_label }}</td>
+                  <td><span class="kitchen-status {{ preparation.status_class }}">{{ preparation.status }}</span></td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="6" class="kitchen-empty">Nenhum preparo registrado ainda. A equipe da cozinha pode incluir o primeiro preparo.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

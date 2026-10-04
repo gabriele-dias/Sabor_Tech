@@ -4,6 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 import json
 
+from .models import KitchenPreparation, Order
 from .calculations import (
     calculate_custo_por_pessoa,
     calculate_custo_total,
@@ -53,6 +54,17 @@ class CoreAccessTests(TestCase):
 
         self.assertRedirects(response, reverse('core:pedidos'))
 
+    def test_waiter_orders_page_links_to_atendimento(self):
+        user = User.objects.create_user(username='garcom_atendimento', password='senha123')
+        group, _ = Group.objects.get_or_create(name='Garçom')
+        user.groups.add(group)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('core:pedidos'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse('core:atendimento'))
+
     def test_management_user_cannot_open_orders(self):
         user = User.objects.create_user(username='gestao', password='senha123')
         self.client.force_login(user)
@@ -61,13 +73,20 @@ class CoreAccessTests(TestCase):
 
         self.assertRedirects(response, reverse('core:home'))
 
-    def test_waiter_is_limited_to_orders(self):
+    def test_waiter_can_return_to_limited_home_but_not_management_pages(self):
         user = User.objects.create_user(username='garcom_limitado', password='senha123')
         group, _ = Group.objects.get_or_create(name='Garçom')
         user.groups.add(group)
         self.client.force_login(user)
 
-        for route_name in ('home', 'dashboard', 'produtos', 'relatorios'):
+        home = self.client.get(reverse('core:home'))
+        self.assertEqual(home.status_code, 200)
+        self.assertContains(home, reverse('core:pedidos'))
+        self.assertContains(home, reverse('core:atendimento'))
+        self.assertNotContains(home, reverse('core:produtos'))
+        self.assertNotContains(home, reverse('core:dashboard'))
+
+        for route_name in ('dashboard', 'produtos', 'relatorios'):
             with self.subTest(route_name=route_name):
                 response = self.client.get(reverse(f'core:{route_name}'))
                 self.assertRedirects(response, reverse('core:pedidos'))
@@ -105,6 +124,20 @@ class CoreAccessTests(TestCase):
         dashboard = self.client.get(reverse('core:dashboard'))
         self.assertContains(dashboard, 'Pizza Calabresa')
         self.assertContains(dashboard, 'garcom_pedido')
+
+    def test_concluir_pedido_rejects_invalid_items_shape(self):
+        waiter = User.objects.create_user(username="garcom_payload", password="senha123")
+        group, _ = Group.objects.get_or_create(name="Garçom")
+        waiter.groups.add(group)
+        self.client.force_login(waiter)
+
+        response = self.client.post(
+            reverse("core:concluir_pedido"),
+            data=json.dumps({"items": {"nome": "Pizza"}, "subtotal": 50, "service_fee": 5, "total": 55}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
 
 
 class OrderCalculationTests(TestCase):
@@ -188,3 +221,224 @@ class OrderCalculationTests(TestCase):
         self.assertEqual(response.context["media_vendas"], 72.25)
         self.assertContains(response, "Pizza Marguerita")
         self.assertContains(response, "farinha de trigo")
+
+
+class ServiceAndStaffViewTests(TestCase):
+    def setUp(self):
+        self.manager = User.objects.create_user(username="manager@sabor.test", password="senha123")
+        management_group, _ = Group.objects.get_or_create(name="Gestão")
+        self.manager.groups.add(management_group)
+        self.client.force_login(self.manager)
+
+    def test_atendimento_displays_orders_and_tables(self):
+        Order.objects.create(
+            waiter=self.manager,
+            items=[{"cliente": "Ana Souza", "mesa": 3, "canal": "Presencial"}],
+            subtotal=Decimal("64.80"),
+            service_fee=Decimal("6.48"),
+            total=Decimal("71.28"),
+            status="Em preparo",
+        )
+
+        response = self.client.get(reverse("core:atendimento"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Atendimento")
+        self.assertContains(response, "Ana Souza")
+        self.assertContains(response, "Mesa 03")
+        self.assertEqual(response.context["occupied_count"], 1)
+        self.assertEqual(response.context["table_count"], 12)
+
+    def test_staff_form_creates_user_with_selected_group(self):
+        response = self.client.post(
+            reverse("core:funcionarios"),
+            {
+                "full_name": "Ana Souza",
+                "email": "ana.souza@sabor.test",
+                "password": "N0v0-Acesso!Sabor2026",
+                "profile": "garcom",
+            },
+            follow=True,
+        )
+
+        employee = User.objects.get(email="ana.souza@sabor.test")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(employee.get_full_name(), "Ana Souza")
+        self.assertTrue(employee.groups.filter(name="Garçom").exists())
+        self.assertContains(response, "Funcionário Ana Souza cadastrado com sucesso.")
+
+    def test_staff_form_shows_role_descriptions(self):
+        response = self.client.get(reverse("core:funcionarios"))
+
+        self.assertContains(response, "Acessa somente Atendimento e Pedidos.")
+        self.assertContains(response, "Acessa toda a gestão do restaurante.")
+        self.assertContains(response, "Acompanha a operação da cozinha.")
+        self.assertContains(response, "Apoia os preparos e tarefas da cozinha.")
+
+    def test_non_management_user_cannot_open_staff_form(self):
+        waiter = User.objects.create_user(username="waiter@sabor.test", password="senha123")
+        waiter_group, _ = Group.objects.get_or_create(name="Garçom")
+        waiter.groups.add(waiter_group)
+        self.client.force_login(waiter)
+
+        response = self.client.get(reverse("core:funcionarios"))
+
+        self.assertRedirects(response, reverse("core:pedidos"))
+
+    def test_legacy_client_and_settings_routes_render(self):
+        for route_name in ("clientes", "configuracoes"):
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(f"core:{route_name}"))
+                self.assertEqual(response.status_code, 200)
+
+    def test_management_menus_hide_orders_without_order_permission(self):
+        for route_name in ("home", "atendimento", "produtos", "receitas", "relatorios", "funcionarios"):
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(f"core:{route_name}"))
+                self.assertEqual(response.status_code, 200)
+                self.assertNotContains(response, f'href="{reverse("core:pedidos")}"')
+
+    def test_main_pages_remain_available_to_superuser(self):
+        administrator = User.objects.create_superuser(
+            username="administrator@sabor.test",
+            email="administrator@sabor.test",
+            password="senha123",
+        )
+        self.client.force_login(administrator)
+
+        for route_name in (
+            "home", "dashboard", "atendimento", "pedidos", "produtos",
+            "receitas", "relatorios", "funcionarios", "clientes", "configuracoes",
+            "desempenho_cozinha",
+        ):
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(f"core:{route_name}"))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, reverse("core:home"))
+                self.assertNotContains(response, f'href="{reverse("core:dashboard")}"')
+
+
+class KitchenPerformanceTests(TestCase):
+    def setUp(self):
+        self.cook = User.objects.create_user(
+            username="cook@sabor.test",
+            email="cook@sabor.test",
+            password="senha123",
+            first_name="Carlos",
+            last_name="Lima",
+        )
+        self.cook_group, _ = Group.objects.get_or_create(name="Chefe de Cozinha")
+        self.cook.groups.add(self.cook_group)
+        self.auxiliary = User.objects.create_user(
+            username="auxiliary@sabor.test",
+            email="auxiliary@sabor.test",
+            password="senha123",
+            first_name="Beatriz",
+            last_name="Alves",
+        )
+        self.auxiliary_group, _ = Group.objects.get_or_create(name="Auxiliar de cozinha")
+        self.auxiliary.groups.add(self.auxiliary_group)
+        self.client.force_login(self.cook)
+
+    def test_kitchen_view_shows_real_records_and_metrics(self):
+        KitchenPreparation.objects.create(
+            dish_name="Pizza Marguerita",
+            responsible=self.cook,
+            status=KitchenPreparation.STATUS_COMPLETED,
+            duration_minutes=18,
+        )
+        KitchenPreparation.objects.create(
+            dish_name="Molho de tomate",
+            responsible=self.auxiliary,
+            status=KitchenPreparation.STATUS_IN_PROGRESS,
+        )
+
+        response = self.client.get(reverse("core:desempenho_cozinha"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Pizza Marguerita")
+        self.assertContains(response, "Carlos Lima")
+        self.assertContains(response, "Auxiliar de cozinha")
+        self.assertEqual(response.context["preparation_count"], 2)
+        self.assertEqual(response.context["average_duration"], 18)
+        self.assertEqual(response.context["active_cooks"], 1)
+        self.assertEqual(response.context["active_assistants"], 1)
+
+    def test_kitchen_member_can_register_a_completed_preparation(self):
+        response = self.client.post(
+            reverse("core:desempenho_cozinha"),
+            {"dish_name": "Lasanha da Casa", "status": "Concluído", "duration_minutes": 32},
+            follow=True,
+        )
+
+        preparation = KitchenPreparation.objects.get(dish_name="Lasanha da Casa")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(preparation.responsible, self.cook)
+        self.assertEqual(preparation.duration_minutes, 32)
+
+    def test_completed_preparation_requires_duration(self):
+        response = self.client.post(
+            reverse("core:desempenho_cozinha"),
+            {"dish_name": "Caldo", "status": "Concluído", "duration_minutes": ""},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(KitchenPreparation.objects.exists())
+        self.assertContains(response, "Informe a duração do preparo concluído.")
+
+    def test_kitchen_profile_filter_limits_records(self):
+        KitchenPreparation.objects.create(
+            dish_name="Pizza Marguerita",
+            responsible=self.cook,
+            status=KitchenPreparation.STATUS_COMPLETED,
+            duration_minutes=18,
+        )
+        KitchenPreparation.objects.create(
+            dish_name="Molho de tomate",
+            responsible=self.auxiliary,
+            status=KitchenPreparation.STATUS_COMPLETED,
+            duration_minutes=12,
+        )
+
+        response = self.client.get(reverse("core:desempenho_cozinha"), {"perfil": "auxiliares"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [preparation.dish_name for preparation in response.context["preparations"]],
+            ["Molho de tomate"],
+        )
+
+    def test_non_kitchen_user_is_redirected(self):
+        waiter = User.objects.create_user(username="kitchen_waiter", password="senha123")
+        waiter_group, _ = Group.objects.get_or_create(name="Garçom")
+        waiter.groups.add(waiter_group)
+        self.client.force_login(waiter)
+
+        response = self.client.get(reverse("core:desempenho_cozinha"))
+
+        self.assertRedirects(response, reverse("core:pedidos"))
+
+    def test_home_and_kitchen_menus_omit_dashboard_and_expose_routes(self):
+        home = self.client.get(reverse("core:home"))
+        kitchen = self.client.get(reverse("core:desempenho_cozinha"))
+
+        self.assertEqual(home.status_code, 200)
+        self.assertEqual(kitchen.status_code, 200)
+        self.assertNotContains(home, ">Dashboard<")
+        self.assertNotContains(kitchen, ">Dashboard<")
+        for route_name in ("atendimento", "produtos", "receitas", "desempenho_cozinha", "relatorios"):
+            with self.subTest(route_name=route_name):
+                self.assertContains(home, reverse(f"core:{route_name}"))
+                self.assertContains(kitchen, reverse(f"core:{route_name}"))
+        self.assertContains(kitchen, "Voltar à Home")
+
+    def test_staff_pages_have_home_return(self):
+        manager = User.objects.create_user(username="staff_manager@sabor.test", password="senha123")
+        management_group, _ = Group.objects.get_or_create(name="Gestão")
+        manager.groups.add(management_group)
+        self.client.force_login(manager)
+        response = self.client.get(reverse("core:funcionarios"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("core:home"))
+        self.assertContains(response, "Voltar à Home")

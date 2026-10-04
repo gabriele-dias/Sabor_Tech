@@ -28,5 +28,25 @@ body {
     color: #182b35;
 }
 
+.main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.home-return {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #cfe3df;
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #087f79;
+    background: #fff;
+    text-decoration: none;
+    font-size: .76rem;
+    font-weight: 700;
+}
+
 
 
