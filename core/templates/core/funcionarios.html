@@ -1,0 +1,59 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sabor Tech | Novo funcionário</title>
+  <link rel="stylesheet" href="{% static 'css/operacao.css' %}">
+</head>
+<body>
+  <div class="ops-shell">
+    <aside class="ops-sidebar">
+      <div class="ops-brand"><span class="ops-brand-mark">+</span><div><strong>Sabor Tech</strong><small>GESTÃO INTELIGENTE</small></div></div>
+      <nav class="ops-nav" aria-label="Navegação principal">
+        <a href="{% url 'core:home' %}">Home</a>
+        <a href="{% url 'core:atendimento' %}">Atendimento</a>
+        {% if can_access_orders %}<a href="{% url 'core:pedidos' %}">Pedidos</a>{% endif %}
+        <a href="{% url 'core:produtos' %}">Cardápio</a>
+        <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
+        {% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}
+        <a href="{% url 'core:relatorios' %}">Relatórios</a>
+        <a class="active" href="{% url 'core:funcionarios' %}">Funcionários</a>
+      </nav>
+      <form class="ops-logout" method="post" action="{% url 'core:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form>
+    </aside>
+
+    <main class="ops-main staff-main">
+      <header class="ops-header">
+        <div><p class="ops-eyebrow">ADMINISTRAÇÃO DA EQUIPE</p><h1>Novo funcionário</h1><p>Crie acessos para cada área do restaurante.</p></div>
+        <a class="ops-back" href="{% url 'core:home' %}">← Voltar à Home</a>
+      </header>
+
+      <section class="staff-panel">
+        {% if messages %}{% for message in messages %}<p class="form-messages">{{ message }}</p>{% endfor %}{% endif %}
+        <div class="staff-section-heading"><span class="staff-step">01</span><div><h2>Dados de acesso</h2><p>Escolha o perfil que define as telas disponíveis para o funcionário.</p></div></div>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="staff-form-grid">
+            <label class="staff-field" for="{{ form.full_name.id_for_label }}">{{ form.full_name.label }}{{ form.full_name }}{% for error in form.full_name.errors %}<span class="form-errors">{{ error }}</span>{% endfor %}</label>
+            <label class="staff-field" for="{{ form.email.id_for_label }}">{{ form.email.label }}{{ form.email }}{% for error in form.email.errors %}<span class="form-errors">{{ error }}</span>{% endfor %}</label>
+            <label class="staff-field" for="{{ form.password.id_for_label }}">{{ form.password.label }}{{ form.password }}{% for error in form.password.errors %}<span class="form-errors">{{ error }}</span>{% endfor %}</label>
+          </div>
+          <p class="staff-roles-label">{{ form.profile.label }}</p>
+          {% for error in form.profile.errors %}<p class="form-errors">{{ error }}</p>{% endfor %}
+          <div class="staff-roles">
+            {% for radio in form.profile %}
+              <label class="role-option">
+                {{ radio.tag }}
+                <span><strong>{{ radio.choice_label }}</strong><small>{% if radio.data.value == 'garcom' %}Acessa somente Atendimento e Pedidos.{% elif radio.data.value == 'administrador' %}Acessa toda a gestão do restaurante.{% elif radio.data.value == 'cozinheiro' %}Acompanha a operação da cozinha.{% else %}Apoia os preparos e tarefas da cozinha.{% endif %}</small></span>
+              </label>
+            {% endfor %}
+          </div>
+          <div class="staff-submit-row"><button class="staff-submit" type="submit">Cadastrar funcionário <span aria-hidden="true">→</span></button></div>
+        </form>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

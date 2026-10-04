@@ -21,7 +21,13 @@ urlpatterns = [
     path("", views.home, name="home-root"),
     path("pedidos/", views.pedidos, name="pedidos"),
     path("pedidos/concluir/", views.concluir_pedido, name="concluir_pedido"),
+    path("atendimento/", views.atendimento, name="atendimento"),
+    path("desempenho-cozinha/", views.desempenho_cozinha, name="desempenho_cozinha"),
+    path("funcionarios/", views.funcionarios, name="funcionarios"),
+    path("funcionarios/novo/", views.funcionarios, name="funcionarios_novo"),
     path("produtos/", views.produtos, name="produtos"),
     path("receitas/", views.receitas, name="receitas"),
     path("relatorios/", views.relatorios, name="relatorios"),
+    path("clientes/", views.clientes, name="clientes"),
+    path("configuracoes/", views.configuracoes, name="configuracoes"),
 ]

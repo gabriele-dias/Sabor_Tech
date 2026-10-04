@@ -31,6 +31,25 @@
         </nav>
 
         <div class="sidebar-bottom">
+          <details class="orders-page-nav">
+            <summary>Navegação do sistema</summary>
+            <div>
+              {% if not is_waiter %}<a href="{% url 'core:home' %}">Home</a>{% endif %}
+              <a href="{% url 'core:atendimento' %}">Atendimento</a>
+              <a href="{% url 'core:pedidos' %}">Pedidos</a>
+              {% if not is_waiter %}
+                <a href="{% url 'core:produtos' %}">Cardápio</a>
+                <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
+                <a href="{% url 'core:relatorios' %}">Relatórios</a>
+              {% endif %}
+              {% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}
+              {% if can_manage_staff %}
+                <a href="{% url 'core:funcionarios' %}">Funcionários</a>
+                <a href="{% url 'core:clientes' %}">Clientes</a>
+                <a href="{% url 'core:configuracoes' %}">Configurações</a>
+              {% endif %}
+            </div>
+          </details>
           <form class="logout-form" method="post" action="{% url 'core:logout' %}">
             {% csrf_token %}
             <button class="logout-link" type="submit">↪ Sair</button>
@@ -44,6 +63,7 @@
             <span>⌕</span>
             <input type="search" id="buscaProduto" placeholder="Buscar produtos..." aria-label="Buscar produtos">
           </div>
+          <a class="add-item-button orders-home-link" href="{% url 'core:home' %}">← Voltar à Home</a>
           <div class="usuario-box">
             <div class="usuario-avatar">{{ request.user.username|first|upper }}</div>
             <div><strong>{{ request.user.username }}</strong><span>Administrador</span></div>
