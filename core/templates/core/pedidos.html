@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
     <link rel="stylesheet" href="{% static 'css/pedidos.css' %}">
   </head>
-  <body class="orders-page">
+  <body class="orders-page" data-ready-orders-url="{% url 'core:pedidos_prontos_status' %}">
     <div class="pedidos-page">
       <aside class="sidebar">
         <div class="sidebar-logo">
@@ -28,26 +28,10 @@
           <a href="#" class="menu-item" data-filter="sobremesas"><span>🍰</span>Sobremesas</a>
           <a href="#" class="menu-item" data-filter="porcoes"><span>🍟</span>Porções</a>
           <a href="#" class="menu-item" data-filter="combos"><span>🏷</span>Combos</a>
+          <a href="{% url 'core:pedidos_prontos' %}" class="menu-item ready-orders-link"><span aria-hidden="true">&#128276;</span><span class="ready-orders-label">Pedidos Prontos</span><span class="ready-count-badge" data-ready-count {% if not ready_count %}hidden{% endif %}>{{ ready_count }}</span></a>
         </nav>
 
         <div class="sidebar-bottom">
-          <details class="orders-page-nav">
-            <summary>Navegação do sistema</summary>
-            <div>
-              <a href="{% url 'core:home' %}">Home</a>
-              <a href="{% url 'core:atendimento' %}">Atendimento</a>
-              {% if can_manage_staff %}<a href="{% url 'core:produtos' %}">Cardápio</a>{% endif %}
-              {% if not is_waiter %}
-                <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
-                <a href="{% url 'core:relatorios' %}">Relatórios</a>
-              {% endif %}
-              {% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}
-              {% if can_access_cook_profile %}<a href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>{% endif %}
-              {% if can_manage_staff %}
-                <a href="{% url 'core:funcionarios' %}">Funcionários</a>
-              {% endif %}
-            </div>
-          </details>
           <form class="logout-form" method="post" action="{% url 'core:logout' %}">
             {% csrf_token %}
             <button class="logout-link" type="submit">↪ Sair</button>
@@ -61,6 +45,7 @@
             <span>⌕</span>
             <input type="search" id="buscaProduto" placeholder="Buscar produtos..." aria-label="Buscar produtos">
           </div>
+          <a class="notification-bell" href="{% url 'core:pedidos_prontos' %}" aria-label="Pedidos prontos aguardando retirada" title="Pedidos Prontos"><span aria-hidden="true">&#128276;</span><span class="ready-count-badge" data-ready-count {% if not ready_count %}hidden{% endif %}>{{ ready_count }}</span></a>
           <div class="usuario-box">
             <div class="usuario-avatar">{{ request.user.username|first|upper }}</div>
             <div><strong>{{ request.user.username }}</strong><span>Garçom</span></div>
@@ -135,5 +120,6 @@
         button.disabled = false;
       });
     </script>
+    <script src="{% static 'js/pedidos.js' %}"></script>
   </body>
 </html>

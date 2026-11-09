@@ -13,18 +13,12 @@
     <aside class="ops-sidebar">
       <div class="ops-brand"><span class="ops-brand-mark">+</span><div><strong>Sabor Tech</strong><small>GESTÃO INTELIGENTE</small></div></div>
       <nav class="ops-nav" aria-label="Navegação principal">
-        <a href="{% url 'core:home' %}">Home</a>
-        {% if can_manage_staff %}
-          <a href="{% url 'core:atendimento' %}">Atendimento</a>
-          <a href="{% url 'core:produtos' %}">Cardápio</a>
-          <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
-        {% endif %}
+        <a href="{% url 'core:perfil_administrativo' %}">Perfil administrativo</a>
+        <a href="{% url 'core:atendimento' %}">Atendimento</a>
+        <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
         <a class="active" href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>
-        {% if can_access_cook_profile %}<a href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>{% endif %}
-        {% if can_manage_staff %}
-          <a href="{% url 'core:relatorios' %}">Relatórios</a>
-          <a href="{% url 'core:funcionarios' %}">Funcionários</a>
-        {% endif %}
+        <a href="{% url 'core:relatorios' %}">Relatórios</a>
+        <a href="{% url 'core:funcionarios' %}">Funcionários</a>
       </nav>
       <form class="ops-logout" method="post" action="{% url 'core:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form>
     </aside>

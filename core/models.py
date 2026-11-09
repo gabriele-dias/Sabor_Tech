@@ -147,12 +147,14 @@ class Order(models.Model):
 	STATUS_PENDING = 'Pendente'
 	STATUS_PREPARING = 'Em preparo'
 	STATUS_READY = 'Pronto'
+	STATUS_OUT_FOR_DELIVERY = 'Saiu para entrega'
 	STATUS_DELIVERED = 'Entregue'
 	STATUS_CANCELLED = 'Cancelado'
 	STATUS_CHOICES = (
 		(STATUS_PENDING, STATUS_PENDING),
 		(STATUS_PREPARING, STATUS_PREPARING),
 		(STATUS_READY, STATUS_READY),
+		(STATUS_OUT_FOR_DELIVERY, STATUS_OUT_FOR_DELIVERY),
 		(STATUS_DELIVERED, STATUS_DELIVERED),
 		(STATUS_CANCELLED, STATUS_CANCELLED),
 	)
@@ -173,6 +175,22 @@ class Order(models.Model):
 	status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
 	confirmed_at = models.DateTimeField(null=True, blank=True)
 	ready_at = models.DateTimeField(null=True, blank=True)
+	pickup_waiter = models.ForeignKey(
+		User,
+		on_delete=models.PROTECT,
+		null=True,
+		blank=True,
+		related_name='orders_picked_up',
+	)
+	picked_up_at = models.DateTimeField(null=True, blank=True)
+	delivery_waiter = models.ForeignKey(
+		User,
+		on_delete=models.PROTECT,
+		null=True,
+		blank=True,
+		related_name='orders_delivered',
+	)
+	delivered_at = models.DateTimeField(null=True, blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 
 	class Meta:

@@ -1,0 +1,25 @@
+{% for order in orders %}
+  <article class="ready-order-card" data-order-id="{{ order.id }}">
+    <header class="ready-order-heading">
+      <div><p>Pedido #{{ order.id|stringformat:"03d" }}</p><h2>{{ order.status }}</h2></div>
+      {% if order.status == 'Pronto' %}<span class="ready-state">Aguardando retirada</span>{% else %}<span class="delivery-state">Saiu para entrega</span>{% endif %}
+    </header>
+    <div class="ready-order-details">
+      {% if order.customer_name %}<p><span>Cliente</span><strong>{{ order.customer_name }}</strong></p>{% endif %}
+      {% if order.table_number %}<p><span>Mesa</span><strong>{{ order.table_number|stringformat:"02d" }}</strong></p>{% endif %}
+      <p><span>Ficou pronto</span><strong>{{ order.ready_at_label }}</strong></p>
+      {% if order.picked_up_at_label %}<p><span>Retirado por</span><strong>{{ order.pickup_waiter_name }}</strong><small>às {{ order.picked_up_at_label }}</small></p>{% endif %}
+    </div>
+    <section class="ready-order-items">
+      <h3>Produtos</h3>
+      <ul>{% for item in order.items %}<li><span>{{ item.quantity }}x</span> {{ item.name }}</li>{% endfor %}</ul>
+    </section>
+    {% if order.status == 'Pronto' %}
+      <form method="post" action="{% url 'core:pegar_pedido' order.id %}">{% csrf_token %}<button class="ready-order-action" type="submit">PEGAR PEDIDO</button></form>
+    {% else %}
+      <form method="post" action="{% url 'core:entregar_pedido' order.id %}" onsubmit="return confirm('Confirma que este pedido foi entregue ao cliente?');">{% csrf_token %}<button class="ready-order-action delivered-action" type="submit">JÁ ENTREGUE</button></form>
+    {% endif %}
+  </article>
+{% empty %}
+  <p class="ready-orders-empty">Nenhum pedido pronto aguardando retirada.</p>
+{% endfor %}

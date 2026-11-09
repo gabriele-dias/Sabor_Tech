@@ -124,10 +124,15 @@ As rotas usam nomes Django. Templates devem preferir `{% url 'core:nome' %}` a c
 | `core:login` | `/login/` | Formulário de autenticação |
 | `core:logout` | `/logout/` | Encerra sessão e volta ao login |
 | `core:home` | `/home/` | Home administrativa ou Home limitada para garçons |
+| `core:perfil_administrativo` | `/perfil-administrativo/` | Acesso administrativo a Atendimento, receitas, Desempenho, Relatórios e Funcionários |
 | `core:home-root` | `/` | Alias da Home |
 | `core:dashboard` | `/dashboard/` | Dashboard legado, fora da navegação normal |
 | `core:pedidos` | `/pedidos/` | Catálogo de pedidos, acessível somente ao grupo Garçom após autenticar |
 | `core:concluir_pedido` | `/pedidos/concluir/` | Recebe JSON via POST e persiste um pedido |
+| `core:pedidos_prontos` | `/pedidos/prontos/` | Fila de retirada/entrega exclusiva do Garçom |
+| `core:pedidos_prontos_status` | `/pedidos/prontos/status/` | JSON de polling para contador e fila de pedidos ativos |
+| `core:pegar_pedido` | `/pedidos/<id>/retirar/` | Transição atômica de Pronto para Saiu para entrega |
+| `core:entregar_pedido` | `/pedidos/<id>/entregar/` | Confirma entrega após retirada e mantém o pedido no histórico |
 | `core:atendimento` | `/atendimento/` | Acompanhamento de pedidos e mesas |
 | `core:desempenho_cozinha` | `/desempenho-cozinha/` | Indicadores e histórico de preparos da cozinha |
 | `core:perfil_cozinheiro` | `/perfil-cozinheiro/` | Painel operacional de pedidos, permitido a cozinheiros e administradores |
@@ -144,10 +149,11 @@ Clientes e Configurações também foram retirados dos menus e permanecem acess�
 
 ### Navegação por perfil
 
-- A tela Pedidos é aberta diretamente pelo redirect pós-login do grupo `Garçom`. Não há atalhos de navegação para ela nas demais páginas, e outros perfis são redirecionados se tentarem abrir sua URL.
-- A Home é acessível a garçons, mas apresenta somente Atendimento e Sair, além da navegação Home. As views administrativas continuam protegidas.
+- A tela Pedidos é aberta diretamente pelo redirect pós-login do grupo `Garçom`. O menu da tela tem categorias e o link Pedidos Prontos; o dropdown legado `Navegação do sistema` foi removido.
+- O login administrativo abre `/perfil-administrativo/`, que reúne Atendimento, Adicionar receitas, Desempenho da cozinha, Relatórios e Funcionários.
+- A tela Desempenho da cozinha é exclusiva de Gestão/superusuário. Cozinheiros e auxiliares não recebem esse link nem podem acessá-la por URL.
 - O Cardápio (`/produtos/`) é exclusivo de superusuários e membros do grupo `Gestão`. A view valida essa permissão no servidor e os menus de outros perfis não exibem o link.
-- Desempenho da cozinha (`/desempenho-cozinha/`) é a tela separada de indicadores e histórico; Gestão/superusuário e equipe de cozinha podem consultar. Cozinheiros e auxiliares podem registrar preparos.
+- Desempenho da cozinha (`/desempenho-cozinha/`) é a tela separada de indicadores e histórico, exclusiva de Gestão/superusuário; somente administradores podem registrar preparos nela.
 - O Perfil exclusivo do cozinheiro (`/perfil-cozinheiro/`) permite leitura a Gestão/superusuário e operação ao grupo `Chefe de Cozinha`. Garçons, clientes e auxiliares não acessam essa rota; o backend valida o perfil. O login de cozinheiro redireciona diretamente para ela.
 - As telas internas mantêm seus links de navegação habituais, mas não apresentam botões ou links rotulados `Voltar`.
 - Na Home, `Sair` é um formulário POST com token CSRF que encerra a sessão e retorna ao Login.
@@ -181,8 +187,8 @@ Em `core/views.py`:
 - `can_manage_staff(user)` autoriza superusuário ou membro de `Gestão`;
 - `can_manage_staff(user)` também controla o acesso à tela Cardápio;
 - `is_kitchen_user(user)` verifica `Chefe de Cozinha` ou `Auxiliar de cozinha`;
-- `can_access_kitchen(user)` permite Gestão/superusuário e equipe da cozinha para Desempenho;
-- `can_access_cook_profile(user)` permite cozinheiro e Gestão/superusuário na tela operacional; ações são restritas a `Chefe de Cozinha`;
+- `can_access_kitchen(user)` permite somente Gestão/superusuário a Desempenho;
+- `can_access_cook_profile(user)` permite cozinheiro e Gestão/superusuário consultar o painel operacional; somente `Chefe de Cozinha` pode operar pedidos;
 - `redirect_waiter(request)` centraliza o destino seguro do garçom.
 
 As mesmas regras controlam a view e a apresentação dos links. Esconder um link no template não substitui a autorização na view: cada view protegida deve validar o perfil no servidor.
@@ -269,27 +275,33 @@ Pedidos sem metadados de cliente são exibidos com o nome do garçom associado. 
 
 ### 9.6 Desempenho e perfil de cozinheiro
 
-`desempenho_cozinha` é a tela de indicadores e histórico de preparos; não contém a fila operacional de pedidos. Gestão/superusuário e equipe da cozinha podem consultar. Cozinheiros e auxiliares podem registrar preparos pelo formulário dessa tela.
+`desempenho_cozinha` é a tela de indicadores e histórico de preparos, exclusiva de Gestão/superusuário. O formulário de registro de preparo nessa tela também é administrativo.
 
-`perfil_cozinheiro` é o painel operacional separado. O login do grupo `Chefe de Cozinha` redireciona diretamente para `/perfil-cozinheiro/`. Cozinheiros podem confirmar pedidos, acompanhar o cronômetro e marcá-los como prontos. Gestão/superusuário, incluindo `gabriele@gmail.com` no banco local, pode consultar sem controles de operação. Garçons, clientes, auxiliares e usuários sem permissão são bloqueados pelo backend.
+`perfil_cozinheiro` é o painel operacional separado. O login do grupo `Chefe de Cozinha` redireciona diretamente para `/perfil-cozinheiro/`. Cozinheiros podem confirmar pedidos, acompanhar o cronômetro e marcá-los como prontos. Gestão/superusuário pode consultar sem controles de operação. Garçons, clientes, auxiliares e usuários sem permissão são bloqueados pelo backend.
 
 O farol e o cronômetro só aparecem depois da confirmação. O horário é salvo no servidor; o navegador atualiza a cada segundo e mantém a contagem após reload. Verde cobre 0 a 19:59, amarelo 20 a 29:59 e vermelho começa em 30 minutos. Pedidos atrasados aparecem primeiro e têm destaque. Ao marcar como pronto, `ready_at` congela a contagem. O alerta sonoro é opcional e ativado pelo cozinheiro.
 
-### 9.7 `funcionarios`
+### 9.7 Pedidos Prontos e fluxo de entrega
+
+`pedidos_prontos` e `pedidos_prontos_status` são exclusivos de garçons e limitados à empresa ativa. O contador considera somente pedidos em `Pronto`; a lista também mostra pedidos `Saiu para entrega`, mas eles não contam como aguardando retirada. O polling ocorre a cada cinco segundos e identifica pedidos novos uma vez por sessão para mostrar aviso visual sem duplicidade.
+
+`pegar_pedido` faz uma atualização condicional de banco que muda `Pronto` para `Saiu para entrega` e grava `pickup_waiter`/`picked_up_at` uma única vez. `entregar_pedido` exige esse estado e os dados de retirada, solicita confirmação antes do envio e grava `delivery_waiter`/`delivered_at`. Entregues deixam a fila ativa, sem serem apagados.
+
+### 9.8 `funcionarios`
 
 Restrita a Gestão e superusuário. Valida `StaffCreateForm`, cria uma conta com e-mail como username, divide nome em primeiro nome/sobrenome, associa a conta ao grupo correspondente e mostra mensagem de sucesso. Garçons sem permissão são encaminhados a Pedidos.
 
-### 9.8 `produtos` e `receitas`
+### 9.9 `produtos` e `receitas`
 
 `produtos` é o Cardápio administrativo e permite somente superusuários e membros do grupo `Gestão`; os demais perfis são redirecionados à Home (garçons seguem o redirect para Pedidos). A consulta exige uma associação ativa com empresa e lista os produtos dessa empresa, ordenados por categoria e nome. A tela permite busca e filtro por categoria; o botão Novo produto encaminha à ficha de receita.
 
 `receitas` exige autenticação e associação ativa com empresa. O formulário cadastra produto, rendimento, tempo de preparo e ingredientes, persistindo os dados em `Product`, `Recipe`, `Ingredient` e `RecipeIngredient`. Após salvar, retorna ao Cardápio; como essa tela é administrativa, usuários sem permissão não conseguem acessá-la pelo link nem pela URL.
 
-### 9.9 `relatorios`
+### 9.10 `relatorios`
 
 Protegida contra garçons. Compõe dados para Chart.js e passa flags de menu. Uma parte das séries e das análises preditivas ainda é demonstrativa, com o último valor de venda atualizado a partir dos pedidos persistidos.
 
-### 9.10 `clientes` e `configuracoes`
+### 9.11 `clientes` e `configuracoes`
 
 Views de compatibilidade do layout legado. Clientes ainda não tem modelo persistente e recebe lista vazia; Configurações renderiza o esqueleto existente. As duas rotas usam autenticação e recusam garçons.
 
@@ -307,11 +319,13 @@ Os templates em `core/templates/core/` definem o HTML e usam tags Django:
 ### Telas principais
 
 - `home.html`: entrada por perfil, navegação, cartões permitidos e botão Sair por POST;
-- `pedidos.html`: catálogo para montar pedidos; comportamento do carrinho e POST para concluir pedido;
+- `pedidos.html`: catálogo para montar pedidos, carrinho, sino e contadores de Pedidos Prontos;
+- `pedidos_prontos.html` e `_pedidos_prontos_cards.html`: fila de retirada/entrega, confirmação e cartões de pedido;
+- `perfil_administrativo.html`: navegação administrativa para as cinco telas operacionais previstas;
 - `atendimento.html`: resumo, busca/filtro, lista de pedidos e grade de mesas;
 - `produtos.html`: Cardápio exclusivo de Gestão/superusuário, com lista da empresa ativa, busca e filtro por categoria; botão Novo produto encaminha à tela de receitas;
 - `receitas.html`: formulário de ficha e cálculo visual de custo;
-- `desempenho_cozinha.html`: template operacional legado do Perfil exclusivo do cozinheiro;
+- `desempenho_cozinha.html`: painel operacional do perfil de cozinheiro, com fila, farol e ações de pedido;
 - `desempenho_metricas.html`: indicadores, filtro e histórico de preparos da tela Desempenho da cozinha;
 - `funcionarios.html`: criação de conta e seleção de grupo;
 - `relatorios.html`: filtros, métricas, gráficos, mapa de movimento e exportação;
@@ -326,6 +340,7 @@ Os estilos estão em `frontend/static/css/`:
 
 - `home.css`: Home administrativa e shell visual;
 - `pedidos.css`: catálogo/carrinho específico da tela Pedidos;
+- `pedidos-prontos.css`: cartões e estados da fila de pedidos prontos, responsivos para telas menores;
 - `cardapio.css`: catálogo administrativo;
 - `receitas.css`: formulário de receita;
 - `relatorios.css`: dashboard de indicadores e gráficos;
@@ -338,6 +353,7 @@ Os arquivos utilizam breakpoints para substituir sidebars por navegação horizo
 ## 12. JavaScript e integrações de navegador
 
 - `pedidos.html` adiciona/remove itens do carrinho, calcula subtotal e taxa de serviço, envia JSON com token CSRF e mostra o resultado;
+- `pedidos.js` consulta pedidos prontos a cada cinco segundos, atualiza os badges e exibe uma notificação visual sem recarregar a tela;
 - `produtos.html` filtra o catálogo por texto e categoria e direciona o botão de novo produto à tela de receitas;
 - `receitas.html` duplica/remove linhas de ingrediente e atualiza o custo estimado no navegador; o salvamento ainda é demonstrativo;
 - `relatorios.html` lê o JSON seguro produzido pela view, constrói gráficos Chart.js, cria o mapa de horários e oferece CSV/impressão.
@@ -354,6 +370,7 @@ Migrações importantes:
 - `0005_create_waiter_role.py`: grupo Garçom;
 - `0006_order.py`: pedidos persistidos;
 - `0007_kitchenpreparation_remove_ingrediente_receita_and_more.py`: tabela `KitchenPreparation` usada pela tela de desempenho.
+- `0010_order_delivery_tracking.py`: estado de retirada, garçons responsáveis e timestamps de retirada/entrega.
 
 Antes de editar modelos:
 
@@ -385,6 +402,7 @@ Os testes em `core/tests.py` cobrem:
 - cálculos puros;
 - renderização e filtros do Dashboard legado;
 - registro, métricas, duração e filtro da cozinha;
+- contagem de pedidos aguardando retirada, escopo por empresa, retirada única, confirmação de entrega e histórico persistente;
 - permissões de cadastro de funcionários;
 - links permitidos por perfil e ausência de controles `Voltar`.
 
@@ -488,7 +506,10 @@ Este inventário explica a responsabilidade dos arquivos de código atualmente p
 - `login.html`: formulário visual de login; recebe campos e erros da autenticação Django.
 - `home.html`: Home por perfil, navegação, cartões e logout POST. Para garçons apresenta apenas rotas de atendimento autorizadas.
 - `dashboard.html`: Dashboard administrativo histórico, acessível diretamente mas removido dos menus; ainda é usado por testes e por compatibilidade de pedidos recebidos.
-- `pedidos.html`: categorias, produtos, carrinho, taxa, total, POST JSON com CSRF e navegação recolhível; o login de garçom redireciona diretamente para essa página.
+- `pedidos.html`: categorias, produtos, carrinho, taxa, total, POST JSON com CSRF, sino e contador de pedidos prontos; o login de garçom redireciona para essa página.
+- `pedidos_prontos.html`: fila de pedidos prontos e em entrega, botão de retirada e confirmação antes da entrega.
+- `_pedidos_prontos_cards.html`: cartão de pedido com cliente, mesa, itens, horário e status.
+- `perfil_administrativo.html`: acesso às telas administrativas definidas para Gestão.
 - `atendimento.html`: indicadores e filtros dos pedidos, linhas da operação, mapa de mesas e links por grupo.
 - `produtos.html`: catálogo exclusivo de Gestão/superusuário, com pesquisa, filtro por categoria e produtos da empresa ativa; Home permanece na navegação normal.
 - `receitas.html`: formulário visual da ficha técnica, linhas dinâmicas de ingrediente e custo estimado; o cadastro ainda não grava modelo de receita.
@@ -521,7 +542,7 @@ O settings ativo adiciona essa pasta a `TEMPLATES[0]['DIRS']`. Ela contém `base
 ### JavaScript em `frontend/static/js`
 
 - `main.js`: inicialização visual da tela de login (mostrar/ocultar senha e estado de envio) e atraso de animação dos cartões da Home; seleciona elementos somente quando eles existem.
-- `pedidos.js`: arquivo presente, atualmente vazio. A lógica ativa de carrinho está inline em `core/templates/core/pedidos.html`.
+- `pedidos.js`: polling de pedidos prontos, atualização dos badges e avisos visuais sem duplicar notificações na sessão. A lógica de carrinho continua inline em `core/templates/core/pedidos.html`.
 - `produtos.js`: arquivo presente, atualmente vazio. Busca, categorias e navegação do botão estão inline em `core/templates/core/produtos.html`.
 - `relatorios.js`: arquivo presente, atualmente vazio. Chart.js, heatmap e exportação estão inline em `core/templates/core/relatorios.html`.
 

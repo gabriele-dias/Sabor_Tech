@@ -450,19 +450,8 @@
         </div>
       </div>
       <nav class="kitchen-actions" aria-label="Navegação principal">
-        <a href="{% url 'core:home' %}">Home</a>
-        {% if can_manage_staff %}
-          <a href="{% url 'core:atendimento' %}">Atendimento</a>
-          <a href="{% url 'core:produtos' %}">Cardápio</a>
-          <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
-          <a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>
-          <a class="active" href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>
-          <a href="{% url 'core:relatorios' %}">Relatórios</a>
-          <a href="{% url 'core:funcionarios' %}">Funcionários</a>
-        {% else %}
-          <a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>
-          <a class="active" href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>
-        {% endif %}
+        <a class="active" href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>
+        {% if can_manage_staff %}<a href="{% url 'core:perfil_administrativo' %}">Perfil administrativo</a>{% endif %}
         <form method="post" action="{% url 'core:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form>
       </nav>
     </aside>

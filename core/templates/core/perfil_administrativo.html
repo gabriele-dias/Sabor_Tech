@@ -1,0 +1,48 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sabor Tech | Perfil administrativo</title>
+  <link rel="stylesheet" href="{% static 'css/operacao.css' %}">
+  <style>
+    .admin-profile-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+    .admin-profile-links a { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px; border: 1px solid #e1eae7; border-radius: 10px; color: #29434a; background: #fff; text-decoration: none; font-weight: 700; }
+    .admin-profile-links a:hover { border-color: #7fc9b5; background: #f0f9f5; }
+    .admin-profile-links span { color: #0a938b; font-size: 1.15rem; }
+  </style>
+</head>
+<body>
+  <div class="ops-shell">
+    <aside class="ops-sidebar">
+      <div class="ops-brand"><span class="ops-brand-mark">+</span><div><strong>Sabor Tech</strong><small>GESTÃO INTELIGENTE</small></div></div>
+      <nav class="ops-nav" aria-label="Navegação principal">
+        <a class="active" href="{% url 'core:perfil_administrativo' %}">Perfil administrativo</a>
+        <a href="{% url 'core:atendimento' %}">Atendimento</a>
+        <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
+        <a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>
+        <a href="{% url 'core:relatorios' %}">Relatórios</a>
+        <a href="{% url 'core:funcionarios' %}">Funcionários</a>
+      </nav>
+      <form class="ops-logout" method="post" action="{% url 'core:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form>
+    </aside>
+
+    <main class="ops-main">
+      <header class="ops-header">
+        <div><p class="ops-eyebrow">ÁREA RESTRITA</p><h1>Perfil administrativo</h1><p>{{ request.user.get_full_name|default:request.user.email }}</p></div>
+      </header>
+      <section class="ops-panel" aria-label="Acessos administrativos">
+        <header class="ops-panel-heading"><div><h2>Gestão do restaurante</h2><p>Acesso administrativo</p></div></header>
+        <nav class="admin-profile-links" aria-label="Acessos administrativos">
+          <a href="{% url 'core:atendimento' %}">Atendimento <span>→</span></a>
+          <a href="{% url 'core:receitas' %}">Adicionar receitas <span>→</span></a>
+          <a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha <span>→</span></a>
+          <a href="{% url 'core:relatorios' %}">Relatórios <span>→</span></a>
+          <a href="{% url 'core:funcionarios' %}">Funcionários <span>→</span></a>
+        </nav>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -7,9 +7,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.http import HttpResponseForbidden, JsonResponse
+from django.template.loader import render_to_string
 from django.db.models import Avg
 from django.db import transaction
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 from django.utils import timezone
 from django.utils.text import slugify
 from decimal import Decimal, InvalidOperation
@@ -41,10 +42,10 @@ class RoleLoginView(auth_views.LoginView):
     def get_success_url(self):
         if is_cook(self.request.user):
             return reverse('core:perfil_cozinheiro')
-        if is_kitchen_user(self.request.user):
-            return reverse('core:desempenho_cozinha')
         if is_waiter(self.request.user):
             return reverse('core:pedidos')
+        if can_manage_staff(self.request.user):
+            return reverse('core:perfil_administrativo')
         return super().get_success_url()
 
 
@@ -65,7 +66,7 @@ def is_cook(user):
 
 
 def can_access_kitchen(user):
-    return can_manage_staff(user) or is_kitchen_user(user)
+    return can_manage_staff(user)
 
 
 def can_access_cook_profile(user):
@@ -95,6 +96,7 @@ def pedidos(request):
     products = Product.objects.filter(tenant=membership.tenant, is_available=True)
     return render(request, 'core/pedidos.html', {
         'products': products,
+        'ready_count': Order.objects.filter(tenant=membership.tenant, status=Order.STATUS_READY).count(),
         'can_manage_staff': can_manage_staff(request.user),
         'can_access_kitchen': can_access_kitchen(request.user),
         'can_access_cook_profile': can_access_cook_profile(request.user),
@@ -117,6 +119,118 @@ def concluir_pedido(request):
     except InsufficientStockError as error:
         return JsonResponse({'error': str(error)}, status=409)
     return JsonResponse({'id': order.pk, 'message': 'Pedido enviado para a administração.'}, status=201)
+
+
+def waiter_ready_orders(tenant):
+    orders = Order.objects.filter(
+        tenant=tenant,
+        status__in=(Order.STATUS_READY, Order.STATUS_OUT_FOR_DELIVERY),
+    ).select_related('client', 'pickup_waiter', 'delivery_waiter').order_by('ready_at', 'created_at')
+    order_rows = []
+    for order in orders:
+        items = []
+        for item in order.items or []:
+            if not isinstance(item, dict):
+                continue
+            name = item.get('nome') or item.get('name') or item.get('product_name') or item.get('produto') or 'Item'
+            quantity = item.get('quantidade') or item.get('quantity') or 1
+            items.append({'name': name, 'quantity': quantity})
+        order_rows.append({
+            'id': order.pk,
+            'status': order.status,
+            'customer_name': order.customer_name or (order.client.name if order.client else ''),
+            'table_number': order.table_number,
+            'items': items,
+            'ready_at_label': timezone.localtime(order.ready_at).strftime('%H:%M') if order.ready_at else '—',
+            'pickup_waiter_name': order.pickup_waiter.get_full_name() if order.pickup_waiter else '',
+            'picked_up_at_label': timezone.localtime(order.picked_up_at).strftime('%H:%M') if order.picked_up_at else '',
+            'delivery_waiter_name': order.delivery_waiter.get_full_name() if order.delivery_waiter else '',
+        })
+    return order_rows
+
+
+@login_required
+def pedidos_prontos(request):
+    membership = current_membership(request)
+    if not is_waiter(request.user) or membership is None:
+        return redirect('core:home')
+    order_rows = waiter_ready_orders(membership.tenant)
+    return render(request, 'core/pedidos_prontos.html', {
+        'orders': order_rows,
+        'ready_count': sum(order['status'] == Order.STATUS_READY for order in order_rows),
+        'can_manage_staff': can_manage_staff(request.user),
+        'can_access_kitchen': can_access_kitchen(request.user),
+        'can_access_cook_profile': can_access_cook_profile(request.user),
+    })
+
+
+@login_required
+@require_GET
+def pedidos_prontos_status(request):
+    membership = current_membership(request)
+    if not is_waiter(request.user) or membership is None:
+        return JsonResponse({'error': 'Apenas garçons podem consultar pedidos prontos.'}, status=403)
+    orders = waiter_ready_orders(membership.tenant)
+    return JsonResponse({
+        'ready_count': sum(order['status'] == Order.STATUS_READY for order in orders),
+        'orders': orders,
+        'html': render_to_string(
+            'core/_pedidos_prontos_cards.html',
+            {'orders': orders},
+            request=request,
+        ),
+    })
+
+
+@login_required
+@require_POST
+def pegar_pedido(request, order_id):
+    membership = current_membership(request)
+    if not is_waiter(request.user) or membership is None:
+        return HttpResponseForbidden('Apenas garçons podem retirar pedidos.')
+
+    updated = Order.objects.filter(
+        pk=order_id,
+        tenant=membership.tenant,
+        status=Order.STATUS_READY,
+        pickup_waiter__isnull=True,
+        picked_up_at__isnull=True,
+    ).update(
+        status=Order.STATUS_OUT_FOR_DELIVERY,
+        pickup_waiter=request.user,
+        picked_up_at=timezone.now(),
+    )
+    if not updated:
+        messages.warning(request, 'Este pedido já foi retirado ou não está aguardando retirada.')
+    else:
+        messages.success(request, f'Pedido #{order_id} retirado para entrega.')
+    return redirect('core:pedidos_prontos')
+
+
+@login_required
+@require_POST
+def entregar_pedido(request, order_id):
+    membership = current_membership(request)
+    if not is_waiter(request.user) or membership is None:
+        return HttpResponseForbidden('Apenas garçons podem confirmar entregas.')
+
+    updated = Order.objects.filter(
+        pk=order_id,
+        tenant=membership.tenant,
+        status=Order.STATUS_OUT_FOR_DELIVERY,
+        pickup_waiter__isnull=False,
+        picked_up_at__isnull=False,
+        delivered_at__isnull=True,
+    ).update(
+        status=Order.STATUS_DELIVERED,
+        delivery_waiter=request.user,
+        delivered_at=timezone.now(),
+    )
+    if not updated:
+        messages.warning(request, 'O pedido precisa ser retirado antes de confirmar a entrega.')
+    else:
+        messages.success(request, f'Pedido #{order_id} marcado como entregue.')
+    return redirect('core:pedidos_prontos')
 
 
 @login_required
@@ -496,7 +610,7 @@ def perfil_cozinheiro(request):
 
 @login_required
 def desempenho_cozinha(request):
-    if not can_access_kitchen(request.user):
+    if not can_manage_staff(request.user):
         waiter_redirect = redirect_waiter(request)
         if waiter_redirect:
             return waiter_redirect
@@ -504,8 +618,8 @@ def desempenho_cozinha(request):
 
     form = KitchenPreparationForm(request.POST or None)
     if request.method == 'POST':
-        if not is_kitchen_user(request.user):
-            return HttpResponseForbidden('Somente a equipe da cozinha pode registrar preparos.')
+        if not can_manage_staff(request.user):
+            return HttpResponseForbidden('Somente o perfil administrativo pode registrar preparos nesta tela.')
         if form.is_valid():
             KitchenPreparation.objects.create(
                 responsible=request.user,
@@ -542,7 +656,7 @@ def desempenho_cozinha(request):
         'can_manage_staff': can_manage_staff(request.user),
         'can_access_kitchen': True,
         'can_access_cook_profile': can_access_cook_profile(request.user),
-        'can_record_preparation': is_kitchen_user(request.user),
+        'can_record_preparation': can_manage_staff(request.user),
         'form': form,
         'preparations': preparation_rows,
         'preparation_count': today_preparations.count(),
@@ -550,6 +664,21 @@ def desempenho_cozinha(request):
         'active_cooks': User.objects.filter(is_active=True, groups__name='Chefe de Cozinha').distinct().count(),
         'active_assistants': User.objects.filter(is_active=True, groups__name='Auxiliar de cozinha').distinct().count(),
         'profile_filter': profile_filter,
+    })
+
+
+@login_required
+def perfil_administrativo(request):
+    if not can_manage_staff(request.user):
+        waiter_redirect = redirect_waiter(request)
+        if waiter_redirect:
+            return waiter_redirect
+        return redirect('core:home')
+
+    return render(request, 'core/perfil_administrativo.html', {
+        'can_manage_staff': True,
+        'can_access_kitchen': True,
+        'can_access_cook_profile': True,
     })
 
 

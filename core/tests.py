@@ -56,7 +56,7 @@ class CoreAccessTests(TestCase):
 
         self.assertRedirects(response, reverse('core:pedidos'))
 
-    def test_waiter_orders_page_links_to_atendimento(self):
+    def test_waiter_orders_page_links_to_ready_orders(self):
         user = User.objects.create_user(username='garcom_atendimento', password='senha123')
         group, _ = Group.objects.get_or_create(name='Garçom')
         user.groups.add(group)
@@ -65,7 +65,9 @@ class CoreAccessTests(TestCase):
         response = self.client.get(reverse('core:pedidos'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, reverse('core:atendimento'))
+        self.assertContains(response, reverse('core:pedidos_prontos'))
+        self.assertContains(response, 'aria-label="Pedidos prontos aguardando retirada"')
+        self.assertNotContains(response, 'Navegação do sistema')
         self.assertNotContains(response, f'href="{reverse("core:pedidos")}"')
 
     def test_management_user_cannot_open_orders(self):
@@ -344,18 +346,50 @@ class ServiceAndStaffViewTests(TestCase):
         self.client.force_login(administrator)
 
         for route_name in (
-            "home", "dashboard", "atendimento", "produtos",
+            "home", "perfil_administrativo", "dashboard", "atendimento", "produtos",
             "receitas", "desempenho_cozinha", "perfil_cozinheiro", "relatorios",
             "funcionarios", "clientes", "configuracoes",
         ):
             with self.subTest(route_name=route_name):
                 response = self.client.get(reverse(f"core:{route_name}"))
                 self.assertEqual(response.status_code, 200)
-                self.assertContains(response, reverse("core:home"))
+                if route_name not in ("perfil_administrativo", "desempenho_cozinha", "perfil_cozinheiro"):
+                    self.assertContains(response, reverse("core:home"))
                 self.assertNotContains(response, f'href="{reverse("core:dashboard")}"')
                 self.assertNotContains(response, f'href="{reverse("core:clientes")}"')
                 self.assertNotContains(response, f'href="{reverse("core:configuracoes")}"')
                 self.assertNotContains(response, "Voltar")
+
+    def test_administrative_profile_has_requested_screens(self):
+        administrator = User.objects.create_superuser(
+            username="admin_profile@sabor.test",
+            email="admin_profile@sabor.test",
+            password="senha123",
+        )
+        self.client.force_login(administrator)
+
+        response = self.client.get(reverse("core:perfil_administrativo"))
+
+        self.assertEqual(response.status_code, 200)
+        for route_name in ("atendimento", "receitas", "desempenho_cozinha", "relatorios", "funcionarios"):
+            self.assertContains(response, reverse(f"core:{route_name}"))
+        for route_name in ("home", "produtos", "perfil_cozinheiro"):
+            self.assertNotContains(response, f'href="{reverse(f"core:{route_name}")}"')
+
+    def test_administrator_login_redirects_to_administrative_profile(self):
+        self.client.logout()
+        administrator = User.objects.create_superuser(
+            username="admin_login@sabor.test",
+            email="admin_login@sabor.test",
+            password="senha123",
+        )
+
+        response = self.client.post(
+            reverse("core:login"),
+            {"username": administrator.email, "password": "senha123"},
+        )
+
+        self.assertRedirects(response, reverse("core:perfil_administrativo"))
 
 
 class KitchenPerformanceTests(TestCase):
@@ -378,6 +412,11 @@ class KitchenPerformanceTests(TestCase):
         )
         self.auxiliary_group, _ = Group.objects.get_or_create(name="Auxiliar de cozinha")
         self.auxiliary.groups.add(self.auxiliary_group)
+        self.administrator = User.objects.create_superuser(
+            username="kitchen_admin@sabor.test",
+            email="kitchen_admin@sabor.test",
+            password="senha123",
+        )
         self.client.force_login(self.cook)
 
     def create_kitchen_order(self, **overrides):
@@ -501,6 +540,7 @@ class KitchenPerformanceTests(TestCase):
             responsible=self.auxiliary,
             status=KitchenPreparation.STATUS_IN_PROGRESS,
         )
+        self.client.force_login(self.administrator)
 
         response = self.client.get(reverse("core:desempenho_cozinha"))
 
@@ -514,7 +554,8 @@ class KitchenPerformanceTests(TestCase):
         self.assertEqual(response.context["active_cooks"], 1)
         self.assertEqual(response.context["active_assistants"], 1)
 
-    def test_kitchen_member_can_register_a_completed_preparation(self):
+    def test_administrator_can_register_a_completed_preparation(self):
+        self.client.force_login(self.administrator)
         response = self.client.post(
             reverse("core:desempenho_cozinha"),
             {"dish_name": "Lasanha da Casa", "status": "Concluído", "duration_minutes": 32},
@@ -523,10 +564,11 @@ class KitchenPerformanceTests(TestCase):
 
         preparation = KitchenPreparation.objects.get(dish_name="Lasanha da Casa")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(preparation.responsible, self.cook)
+        self.assertEqual(preparation.responsible, self.administrator)
         self.assertEqual(preparation.duration_minutes, 32)
 
     def test_completed_preparation_requires_duration(self):
+        self.client.force_login(self.administrator)
         response = self.client.post(
             reverse("core:desempenho_cozinha"),
             {"dish_name": "Caldo", "status": "Concluído", "duration_minutes": ""},
@@ -549,6 +591,7 @@ class KitchenPerformanceTests(TestCase):
             status=KitchenPreparation.STATUS_COMPLETED,
             duration_minutes=12,
         )
+        self.client.force_login(self.administrator)
 
         response = self.client.get(reverse("core:desempenho_cozinha"), {"perfil": "auxiliares"})
 
@@ -631,12 +674,12 @@ class KitchenPerformanceTests(TestCase):
         self.assertEqual(kitchen.status_code, 200)
         self.assertNotContains(home, ">Dashboard<")
         self.assertNotContains(kitchen, ">Dashboard<")
-        for route_name in ("atendimento", "receitas", "desempenho_cozinha", "perfil_cozinheiro", "relatorios"):
+        for route_name in ("atendimento", "receitas", "perfil_cozinheiro", "relatorios"):
             with self.subTest(route_name=route_name):
                 self.assertContains(home, reverse(f"core:{route_name}"))
-        self.assertContains(kitchen, reverse("core:home"))
-        self.assertContains(kitchen, reverse("core:desempenho_cozinha"))
         self.assertContains(kitchen, reverse("core:perfil_cozinheiro"))
+        self.assertNotContains(kitchen, reverse("core:home"))
+        self.assertNotContains(kitchen, reverse("core:desempenho_cozinha"))
         self.assertNotContains(home, reverse("core:produtos"))
         self.assertNotContains(kitchen, reverse("core:produtos"))
         for route_name in ("atendimento", "receitas", "relatorios", "funcionarios"):
@@ -653,3 +696,129 @@ class KitchenPerformanceTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("core:home"))
         self.assertNotContains(response, "Voltar")
+
+
+class ReadyOrdersWorkflowTests(TestCase):
+    def setUp(self):
+        self.tenant = Tenant.objects.create(name="Pedidos Prontos Teste", slug="pedidos-prontos-teste")
+        self.waiter = self.create_waiter("garcom.principal@sabor.test")
+        TenantMembership.objects.create(
+            tenant=self.tenant,
+            user=self.waiter,
+            role=TenantMembership.Role.WAITER,
+        )
+        self.client.force_login(self.waiter)
+
+    def create_waiter(self, username):
+        waiter = User.objects.create_user(username=username, password="senha123")
+        group, _ = Group.objects.get_or_create(name="Garçom")
+        waiter.groups.add(group)
+        return waiter
+
+    def create_order(self, status, **overrides):
+        data = {
+            "waiter": self.waiter,
+            "tenant": self.tenant,
+            "customer_name": "Cliente Teste",
+            "table_number": 4,
+            "items": [{"nome": "Pizza Calabresa", "quantidade": 2}],
+            "subtotal": Decimal("40.00"),
+            "service_fee": Decimal("0.00"),
+            "total": Decimal("40.00"),
+            "status": status,
+        }
+        data.update(overrides)
+        return Order.objects.create(**data)
+
+    def test_ready_queue_and_notification_count_include_only_waiting_pickup(self):
+        ready = self.create_order(Order.STATUS_READY, ready_at=timezone.now())
+        out_for_delivery = self.create_order(
+            Order.STATUS_OUT_FOR_DELIVERY,
+            ready_at=timezone.now(),
+            pickup_waiter=self.waiter,
+            picked_up_at=timezone.now(),
+        )
+        delivered = self.create_order(
+            Order.STATUS_DELIVERED,
+            ready_at=timezone.now(),
+            pickup_waiter=self.waiter,
+            picked_up_at=timezone.now(),
+            delivery_waiter=self.waiter,
+            delivered_at=timezone.now(),
+        )
+
+        page = self.client.get(reverse("core:pedidos_prontos"))
+        status = self.client.get(reverse("core:pedidos_prontos_status"))
+
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, f"{ready.pk:03d}")
+        self.assertContains(page, f"{out_for_delivery.pk:03d}")
+        self.assertNotContains(page, f"{delivered.pk:03d}")
+        self.assertContains(page, "PEGAR PEDIDO")
+        self.assertContains(page, "JÁ ENTREGUE")
+        self.assertIn("confirm(", page.content.decode())
+        self.assertEqual(status.status_code, 200)
+        self.assertEqual(status.json()["ready_count"], 1)
+        self.assertEqual({row["id"] for row in status.json()["orders"]}, {ready.pk, out_for_delivery.pk})
+
+    def test_pickup_is_claimed_once_and_records_waiter_and_time(self):
+        order = self.create_order(Order.STATUS_READY, ready_at=timezone.now())
+        other_waiter = self.create_waiter("garcom.segundo@sabor.test")
+        TenantMembership.objects.create(
+            tenant=self.tenant,
+            user=other_waiter,
+            role=TenantMembership.Role.WAITER,
+        )
+
+        first_response = self.client.post(reverse("core:pegar_pedido", args=[order.pk]))
+        order.refresh_from_db()
+        picked_up_at = order.picked_up_at
+        second_client = self.client_class()
+        second_client.force_login(other_waiter)
+        second_response = second_client.post(reverse("core:pegar_pedido", args=[order.pk]))
+        order.refresh_from_db()
+
+        self.assertRedirects(first_response, reverse("core:pedidos_prontos"))
+        self.assertEqual(order.status, Order.STATUS_OUT_FOR_DELIVERY)
+        self.assertEqual(order.pickup_waiter, self.waiter)
+        self.assertIsNotNone(picked_up_at)
+        self.assertEqual(second_response.status_code, 302)
+        self.assertEqual(order.pickup_waiter, self.waiter)
+        self.assertEqual(order.picked_up_at, picked_up_at)
+
+    def test_delivery_requires_pickup_and_preserves_order_history(self):
+        order = self.create_order(Order.STATUS_READY, ready_at=timezone.now())
+
+        premature_response = self.client.post(reverse("core:entregar_pedido", args=[order.pk]))
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.STATUS_READY)
+        self.assertIsNone(order.delivered_at)
+
+        self.client.post(reverse("core:pegar_pedido", args=[order.pk]))
+        delivery_response = self.client.post(reverse("core:entregar_pedido", args=[order.pk]))
+        order.refresh_from_db()
+
+        self.assertEqual(premature_response.status_code, 302)
+        self.assertEqual(delivery_response.status_code, 302)
+        self.assertEqual(order.status, Order.STATUS_DELIVERED)
+        self.assertEqual(order.delivery_waiter, self.waiter)
+        self.assertIsNotNone(order.delivered_at)
+        self.assertTrue(Order.objects.filter(pk=order.pk).exists())
+        self.assertNotContains(self.client.get(reverse("core:pedidos_prontos")), f"{order.pk:03d}")
+
+    def test_non_waiter_cannot_access_queue_or_actions(self):
+        administrator = User.objects.create_superuser(
+            username="ready_orders_admin@sabor.test",
+            email="ready_orders_admin@sabor.test",
+            password="senha123",
+        )
+        order = self.create_order(Order.STATUS_READY)
+        self.client.force_login(administrator)
+
+        page = self.client.get(reverse("core:pedidos_prontos"))
+        status = self.client.get(reverse("core:pedidos_prontos_status"))
+        pickup = self.client.post(reverse("core:pegar_pedido", args=[order.pk]))
+
+        self.assertRedirects(page, reverse("core:home"))
+        self.assertEqual(status.status_code, 403)
+        self.assertEqual(pickup.status_code, 403)
