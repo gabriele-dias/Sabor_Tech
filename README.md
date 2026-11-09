@@ -34,10 +34,11 @@ Para criar o primeiro administrador, execute `python manage.py createsuperuser`.
 
 ## Perfis
 
-- **Gestão/superusuário:** Home, atendimento, cardápio, receitas, relatórios e administração de funcionários. Algumas páginas legadas permanecem acessíveis por URL.
-- **Garçom:** entra inicialmente em Pedidos e pode voltar à Home limitada, que oferece somente Atendimento, Pedidos e Sair.
-- **Cozinheiro:** grupo Django `Chefe de Cozinha`; pode registrar preparos e consultar desempenho da cozinha.
-- **Auxiliar de cozinha:** pode registrar preparos e consultar desempenho da cozinha.
+- **Gestão/superusuário:** Home, atendimento, cardápio, receitas, relatórios, desempenho da cozinha e administração de funcionários. Pode consultar o perfil exclusivo do cozinheiro, sem operar pedidos.
+- **Garçom:** após autenticar, abre diretamente a página Pedidos. Essa página não aparece como link em nenhuma outra tela e usuários de outros perfis não podem abri-la por URL.
+- **Cozinheiro:** grupo Django `Chefe de Cozinha`; após o login, abre diretamente o Perfil exclusivo do cozinheiro e pode confirmar/finalizar pedidos.
+- **Auxiliar de cozinha:** consulta Desempenho da cozinha e pode registrar preparos; não acessa o perfil operacional exclusivo.
+- **Garçom:** não acessa o Perfil exclusivo do cozinheiro.
 
 As permissões são validadas nas views Django. A ocultação de links no HTML é apenas uma conveniência de navegação, não substitui autorização no servidor.
 
@@ -49,13 +50,18 @@ As permissões são validadas nas views Django. A ocultação de links no HTML �
 | Home | `/home/` |
 | Pedidos | `/pedidos/` |
 | Atendimento | `/atendimento/` |
-| Cardápio | `/produtos/` |
+| Cardápio (somente Gestão/superusuário) | `/produtos/` |
 | Adicionar receitas | `/receitas/` |
 | Desempenho cozinha | `/desempenho-cozinha/` |
+| Perfil exclusivo do cozinheiro | `/perfil-cozinheiro/` |
 | Relatórios | `/relatorios/` |
 | Funcionários | `/funcionarios/` |
 
-As páginas internas têm um retorno à Home. Na Home, a ação Sair encerra a sessão e retorna ao Login. O Dashboard legado continua em `/dashboard/` por compatibilidade, mas foi removido dos menus.
+Desempenho da cozinha é a tela de indicadores e histórico de preparos. O Perfil exclusivo do cozinheiro é a tela operacional de pedidos e cronômetro; o administrador, incluindo `gabriele@gmail.com` no banco local, tem somente consulta.
+
+O Cardápio lista os produtos da empresa ativa e oferece busca e filtro por categoria. O cadastro de um produto começa em Adicionar receitas, onde são informados os dados do produto, rendimento, tempo e ingredientes.
+
+As telas mantêm a navegação normal por menus, sem botões Voltar. Na Home, a ação Sair encerra a sessão e retorna ao Login. O Dashboard legado continua em `/dashboard/` por compatibilidade, mas foi removido dos menus.
 
 ## Testes e verificações
 

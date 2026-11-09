@@ -21,13 +21,12 @@
         <nav class="nav">
           <a class="nav-item active" href="{% url 'core:home' %}">Home</a>
           <a class="nav-item" href="{% url 'core:atendimento' %}">Atendimento</a>
-          {% if is_waiter or request.user.is_superuser %}<a class="nav-item" href="{% url 'core:pedidos' %}">Pedidos</a>{% endif %}
-          {% if not is_waiter %}<a class="nav-item" href="{% url 'core:produtos' %}">Cardápio</a>
-          <a class="nav-item" href="{% url 'core:receitas' %}">Adicionar receitas</a>{% endif %}
+          {% if can_manage_staff %}<a class="nav-item" href="{% url 'core:produtos' %}">Cardápio</a>{% endif %}
+          {% if not is_waiter %}<a class="nav-item" href="{% url 'core:receitas' %}">Adicionar receitas</a>{% endif %}
           {% if can_access_kitchen %}<a class="nav-item" href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}
+          {% if can_access_cook_profile %}<a class="nav-item" href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>{% endif %}
           {% if not is_waiter %}<a class="nav-item" href="{% url 'core:relatorios' %}">Relatórios</a>{% endif %}
           {% if can_manage_staff %}<a class="nav-item" href="{% url 'core:funcionarios' %}">Funcionários</a>{% endif %}
-          {% if can_manage_staff %}<a class="nav-item" href="{% url 'core:clientes' %}">Clientes</a><a class="nav-item" href="{% url 'core:configuracoes' %}">Configurações</a>{% endif %}
           <form class="logout-form" method="post" action="{% url 'core:logout' %}">
             {% csrf_token %}
             <button class="nav-item logout-button" type="submit">Sair</button>
@@ -68,15 +67,9 @@
         {% if is_waiter %}
         <section class="cards-grid">
           <article class="feature-card">
-            <span class="feature-tag">Pedidos</span>
+            <span class="feature-tag">Operação</span>
             <h3>Atendimento</h3>
-            <p>Acompanhe pedidos e mesas da operação.</p>
-            <a href="{% url 'core:pedidos' %}">Abrir pedidos</a>
-          </article>
-          <article class="feature-card">
-            <span class="feature-tag">Salão</span>
-            <h3>Acompanhamento</h3>
-            <p>Consulte os pedidos ativos e a ocupação das mesas.</p>
+            <p>Acompanhe a operação e a ocupação das mesas.</p>
             <a href="{% url 'core:atendimento' %}">Abrir atendimento</a>
           </article>
         </section>
@@ -96,12 +89,12 @@
             <a href="{% url 'core:relatorios' %}">Abrir relatórios</a>
           </article>
 
-          <article class="feature-card">
+          {% if can_manage_staff %}<article class="feature-card">
             <span class="feature-tag">Cardápio</span>
             <h3>Cardápio</h3>
             <p>Gerencie os produtos, preços e disponibilidade do seu restaurante.</p>
             <a href="{% url 'core:produtos' %}">Abrir cardápio</a>
-          </article>
+          </article>{% endif %}
         </section>
         {% endif %}
       </main>

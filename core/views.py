@@ -1,6 +1,6 @@
 from django.contrib.auth import views as auth_views
 from django.contrib.auth import logout
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import Group, User
 from django.contrib import messages
@@ -8,18 +8,41 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.http import HttpResponseForbidden, JsonResponse
 from django.db.models import Avg
+from django.db import transaction
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.utils.text import slugify
 from decimal import Decimal, InvalidOperation
 import json
 
-from .forms import KitchenPreparationForm, StaffCreateForm
-from .models import KitchenPreparation, Order
+from .forms import (
+    KitchenPreparationForm,
+    RecipeCreateForm,
+    RecipeIngredientFormSet,
+    StaffCreateForm,
+    StockMovementForm,
+)
+from .models import (
+    Client,
+    Ingredient,
+    InventoryMovement,
+    KitchenPreparation,
+    Order,
+    Product,
+    Recipe,
+    RecipeIngredient,
+    TenantMembership,
+)
+from .services import InsufficientStockError, OrderPayloadError, create_order_from_payload
+from .tenancy import membership_for_request
 
 
 class RoleLoginView(auth_views.LoginView):
     def get_success_url(self):
+        if is_cook(self.request.user):
+            return reverse('core:perfil_cozinheiro')
+        if is_kitchen_user(self.request.user):
+            return reverse('core:desempenho_cozinha')
         if is_waiter(self.request.user):
             return reverse('core:pedidos')
         return super().get_success_url()
@@ -27,10 +50,6 @@ class RoleLoginView(auth_views.LoginView):
 
 def is_waiter(user):
     return user.groups.filter(name='Garçom').exists()
-
-
-def can_access_orders(user):
-    return user.is_superuser or is_waiter(user)
 
 
 def can_manage_staff(user):
@@ -41,8 +60,16 @@ def is_kitchen_user(user):
     return user.groups.filter(name__in=('Chefe de Cozinha', 'Auxiliar de cozinha')).exists()
 
 
+def is_cook(user):
+    return user.groups.filter(name='Chefe de Cozinha').exists()
+
+
 def can_access_kitchen(user):
     return can_manage_staff(user) or is_kitchen_user(user)
+
+
+def can_access_cook_profile(user):
+    return can_manage_staff(user) or is_cook(user)
 
 
 def redirect_waiter(request):
@@ -56,14 +83,21 @@ def logout_view(request):
     return redirect('core:login')
 
 
+def current_membership(request):
+    return membership_for_request(request)
+
+
 @login_required
 def pedidos(request):
-    if not request.user.is_superuser and not is_waiter(request.user):
+    membership = current_membership(request)
+    if not is_waiter(request.user) or membership is None:
         return redirect('core:home')
+    products = Product.objects.filter(tenant=membership.tenant, is_available=True)
     return render(request, 'core/pedidos.html', {
-        'can_access_orders': can_access_orders(request.user),
+        'products': products,
         'can_manage_staff': can_manage_staff(request.user),
         'can_access_kitchen': can_access_kitchen(request.user),
+        'can_access_cook_profile': can_access_cook_profile(request.user),
         'is_waiter': is_waiter(request.user),
     })
 
@@ -71,28 +105,17 @@ def pedidos(request):
 @login_required
 @require_POST
 def concluir_pedido(request):
-    if not is_waiter(request.user) and not request.user.is_superuser:
+    membership = current_membership(request)
+    if not is_waiter(request.user) or membership is None:
         return JsonResponse({'error': 'Apenas garçons podem concluir pedidos.'}, status=403)
 
     try:
         payload = json.loads(request.body)
-        items = payload.get('items', [])
-        subtotal = Decimal(str(payload.get('subtotal', '0')))
-        service_fee = Decimal(str(payload.get('service_fee', '0')))
-        total = Decimal(str(payload.get('total', '0')))
-    except (json.JSONDecodeError, InvalidOperation, TypeError, ValueError):
-        return JsonResponse({'error': 'Dados do pedido inválidos.'}, status=400)
-
-    if not isinstance(items, list) or not items or any(not isinstance(item, dict) for item in items) or subtotal <= 0 or total <= 0:
-        return JsonResponse({'error': 'Adicione pelo menos um item ao pedido.'}, status=400)
-
-    order = Order.objects.create(
-        waiter=request.user,
-        items=items,
-        subtotal=subtotal,
-        service_fee=service_fee,
-        total=total,
-    )
+        order = create_order_from_payload(waiter=request.user, membership=membership, payload=payload)
+    except (json.JSONDecodeError, TypeError, OrderPayloadError) as error:
+        return JsonResponse({'error': str(error) or 'Dados do pedido inválidos.'}, status=400)
+    except InsufficientStockError as error:
+        return JsonResponse({'error': str(error)}, status=409)
     return JsonResponse({'id': order.pk, 'message': 'Pedido enviado para a administração.'}, status=201)
 
 
@@ -143,9 +166,9 @@ def dashboard(request):
     date_end = request.GET.get('date_end', '2026-09-13')
 
     context = {
-        'can_access_orders': can_access_orders(request.user),
         'can_manage_staff': can_manage_staff(request.user),
         'can_access_kitchen': can_access_kitchen(request.user),
+        'can_access_cook_profile': can_access_cook_profile(request.user),
         'date_start': date_start,
         'date_end': date_end,
         'period_days': period_days,
@@ -186,19 +209,17 @@ def produtos(request):
     waiter_redirect = redirect_waiter(request)
     if waiter_redirect:
         return waiter_redirect
-    produtos = [
-        {'nome': 'Pizza Marguerita', 'categoria': 'Pizzas', 'descricao': 'Molho de tomate, mozzarella e manjericão.', 'preco': '54,90', 'emoji': '🍕', 'disponivel': True},
-        {'nome': 'Pizza Calabresa', 'categoria': 'Pizzas', 'descricao': 'Calabresa artesanal, cebola e mozzarella.', 'preco': '59,90', 'emoji': '🍕', 'disponivel': True},
-        {'nome': 'X-Bacon', 'categoria': 'Lanches', 'descricao': 'Hambúrguer, bacon crocante e queijo.', 'preco': '34,90', 'emoji': '🍔', 'disponivel': True},
-        {'nome': 'Lasanha da Casa', 'categoria': 'Massas', 'descricao': 'Camadas de massa, molho e queijo gratinado.', 'preco': '42,90', 'emoji': '🍝', 'disponivel': True},
-        {'nome': 'Suco Natural', 'categoria': 'Bebidas', 'descricao': 'Escolha o sabor do dia, servido bem gelado.', 'preco': '9,90', 'emoji': '🥤', 'disponivel': True},
-        {'nome': 'Brownie com Sorvete', 'categoria': 'Sobremesas', 'descricao': 'Brownie quente, sorvete e calda de chocolate.', 'preco': '18,90', 'emoji': '🍰', 'disponivel': False},
-    ]
+    if not can_manage_staff(request.user):
+        return redirect('core:home')
+    membership = current_membership(request)
+    if membership is None:
+        return redirect('core:home')
+    produtos = Product.objects.filter(tenant=membership.tenant).order_by('category', 'name')
     return render(request, 'core/produtos.html', {
         'produtos': produtos,
-        'can_access_orders': can_access_orders(request.user),
         'can_manage_staff': can_manage_staff(request.user),
         'can_access_kitchen': can_access_kitchen(request.user),
+        'can_access_cook_profile': can_access_cook_profile(request.user),
     })
 
 
@@ -207,10 +228,72 @@ def receitas(request):
     waiter_redirect = redirect_waiter(request)
     if waiter_redirect:
         return waiter_redirect
+    membership = current_membership(request)
+    if membership is None:
+        return redirect('core:home')
+
+    form = RecipeCreateForm(request.POST or None)
+    ingredient_formset = RecipeIngredientFormSet(request.POST or None, prefix='ingredients')
+    if request.method == 'POST' and form.is_valid() and ingredient_formset.is_valid():
+        active_lines = [
+            line for line in ingredient_formset.forms
+            if line.cleaned_data and not line.cleaned_data.get('DELETE', False)
+        ]
+        if not active_lines:
+            ingredient_formset.forms[0].add_error(None, 'Inclua pelo menos um ingrediente na ficha.')
+
+        if Product.objects.filter(tenant=membership.tenant, name__iexact=form.cleaned_data['name']).exists():
+            form.add_error('name', 'Já existe um produto com esse nome nesta empresa.')
+
+        for line in active_lines:
+            existing = Ingredient.objects.filter(
+                tenant=membership.tenant,
+                name__iexact=line.cleaned_data['name'],
+            ).first()
+            if existing and existing.unit != line.cleaned_data['unit']:
+                line.add_error('unit', f'Este insumo já está cadastrado em {existing.unit}.')
+
+        if form.is_valid() and ingredient_formset.is_valid() and active_lines:
+            with transaction.atomic():
+                product = Product.objects.create(
+                    tenant=membership.tenant,
+                    name=form.cleaned_data['name'],
+                    category=form.cleaned_data['category'],
+                    description=form.cleaned_data['description'],
+                    sale_price=form.cleaned_data['sale_price'],
+                )
+                recipe = Recipe.objects.create(
+                    tenant=membership.tenant,
+                    product=product,
+                    yield_quantity=form.cleaned_data['yield_quantity'],
+                    prep_time_minutes=form.cleaned_data['prep_time_minutes'],
+                )
+                for line in active_lines:
+                    ingredient, created = Ingredient.objects.get_or_create(
+                        tenant=membership.tenant,
+                        name=line.cleaned_data['name'],
+                        defaults={
+                            'unit': line.cleaned_data['unit'],
+                            'unit_cost': line.cleaned_data['unit_cost'],
+                        },
+                    )
+                    if not created and ingredient.unit_cost != line.cleaned_data['unit_cost']:
+                        ingredient.unit_cost = line.cleaned_data['unit_cost']
+                        ingredient.save(update_fields=['unit_cost'])
+                    RecipeIngredient.objects.create(
+                        recipe=recipe,
+                        ingredient=ingredient,
+                        quantity=line.cleaned_data['quantity'],
+                    )
+            messages.success(request, f'Receita {product.name} cadastrada e salva no cardápio.')
+            return redirect('core:produtos')
+
     return render(request, 'core/receitas.html', {
-        'can_access_orders': can_access_orders(request.user),
+        'form': form,
+        'ingredient_formset': ingredient_formset,
         'can_manage_staff': can_manage_staff(request.user),
         'can_access_kitchen': can_access_kitchen(request.user),
+        'can_access_cook_profile': can_access_cook_profile(request.user),
     })
 
 
@@ -281,7 +364,6 @@ def atendimento(request):
     ]
     return render(request, 'core/atendimento.html', {
         'orders': filtered_orders,
-        'can_access_orders': can_access_orders(request.user),
         'orders_count': len(filtered_orders),
         'status_filter': status_filter,
         'search_term': request.GET.get('q', ''),
@@ -291,6 +373,7 @@ def atendimento(request):
         'tables': tables,
         'can_manage_staff': staff_admin,
         'can_access_kitchen': can_access_kitchen(request.user),
+        'can_access_cook_profile': can_access_cook_profile(request.user),
         'prep_count': prep_count,
         'delivery_count': delivery_count,
         'average_minutes': round(sum(active_age_minutes) / len(active_age_minutes)) if active_age_minutes else 0,
@@ -298,10 +381,122 @@ def atendimento(request):
 
 
 @login_required
+def perfil_cozinheiro(request):
+    cook_user = is_cook(request.user)
+    if not can_access_cook_profile(request.user):
+        waiter_redirect = redirect_waiter(request)
+        if waiter_redirect:
+            return waiter_redirect
+        return redirect('core:home')
+
+    if request.method == 'POST':
+        if not cook_user:
+            return HttpResponseForbidden('Somente o perfil de cozinheiro pode operar este painel.')
+
+        action = request.POST.get('action')
+        order_id = request.POST.get('order_id')
+        if action in {'confirm_order', 'ready_order'} and order_id:
+            order = get_object_or_404(Order, pk=order_id, tenant=current_membership(request).tenant)
+            if action == 'confirm_order':
+                if order.confirmed_at is None:
+                    order.confirmed_at = timezone.now()
+                if order.status in (Order.STATUS_PENDING, 'Pendente'):
+                    order.status = Order.STATUS_PREPARING
+                order.save(update_fields=['confirmed_at', 'status'])
+                messages.success(request, f'Pedido #{order.pk} confirmado. Cronômetro iniciado.')
+            elif action == 'ready_order':
+                order.status = Order.STATUS_READY
+                order.ready_at = order.ready_at or timezone.now()
+                order.save(update_fields=['status', 'ready_at'])
+                messages.success(request, f'Pedido #{order.pk} marcado como pronto. Cronômetro finalizado.')
+            return redirect('core:perfil_cozinheiro')
+
+        return HttpResponseForbidden('Ação inválida para o painel do cozinheiro.')
+
+    membership = current_membership(request)
+    orders = Order.objects.filter(tenant=membership.tenant).exclude(status__in=(Order.STATUS_CANCELLED, 'Entregue')).order_by('created_at') if membership else Order.objects.none()
+    kitchen_orders = []
+    server_now = timezone.now()
+    server_now_ms = int(server_now.timestamp() * 1000)
+    for order in orders:
+        confirmed_at_ms = int(order.confirmed_at.timestamp() * 1000) if order.confirmed_at else None
+        ready_at = order.ready_at or (server_now if order.status == Order.STATUS_READY else None)
+        ready_at_ms = int(ready_at.timestamp() * 1000) if ready_at else None
+        if not order.confirmed_at:
+            traffic_light = 'pending'
+            elapsed_label = ''
+            trend_label = 'Aguardando confirmação'
+        else:
+            reference = ready_at or server_now
+            total_seconds = max(0, int((reference - order.confirmed_at).total_seconds()))
+            display_minutes, remainder = divmod(total_seconds, 60)
+            elapsed_label = f'{display_minutes:02d}:{remainder:02d}'
+            if order.status == Order.STATUS_READY:
+                traffic_light = 'done'
+                trend_label = 'Pedido concluído'
+            elif total_seconds < 20 * 60:
+                traffic_light = 'green'
+                trend_label = 'Tempo dentro do esperado'
+            elif total_seconds < 30 * 60:
+                traffic_light = 'yellow'
+                trend_label = 'Atenção ao tempo'
+            else:
+                traffic_light = 'red'
+                trend_label = 'Pedido atrasado · prioridade'
+
+        if traffic_light == 'red':
+            priority = 0
+        elif traffic_light == 'yellow':
+            priority = 1
+        elif traffic_light == 'green':
+            priority = 2
+        elif traffic_light == 'pending':
+            priority = 3
+        else:
+            priority = 4
+
+        item_lines = []
+        for item in order.items or []:
+            if not isinstance(item, dict):
+                continue
+            name = item.get('name') or item.get('product_name') or item.get('nome') or item.get('produto') or item.get('item') or 'Item'
+            quantity = item.get('quantity') or item.get('quantidade') or 1
+            item_lines.append(f'{quantity}x {name}')
+        if not item_lines:
+            item_lines.append('Pedido em andamento')
+
+        kitchen_orders.append({
+            'id': order.pk,
+            'status': order.status,
+            'status_class': slugify(order.status),
+            'traffic_light': traffic_light,
+            'elapsed_label': elapsed_label,
+            'trend_label': trend_label,
+            'confirmed_at_ms': confirmed_at_ms,
+            'ready_at_ms': ready_at_ms,
+            'priority': priority,
+            'customer': order.customer_name or order.waiter.get_full_name() or order.waiter.username,
+            'table_number': order.table_number,
+            'responsible': order.waiter.get_full_name() or order.waiter.username,
+            'items': item_lines,
+            'observation': order.items[0].get('observacao') if order.items and isinstance(order.items[0], dict) else '',
+        })
+
+    kitchen_orders.sort(key=lambda order: order['priority'])
+
+    return render(request, 'core/desempenho_cozinha.html', {
+        'can_manage_staff': can_manage_staff(request.user),
+        'can_access_kitchen': can_access_kitchen(request.user),
+        'can_access_cook_profile': can_access_cook_profile(request.user),
+        'can_record_preparation': cook_user,
+        'kitchen_orders': kitchen_orders,
+        'server_now_ms': server_now_ms,
+    })
+
+
+@login_required
 def desempenho_cozinha(request):
-    kitchen_user = is_kitchen_user(request.user)
-    staff_admin = can_manage_staff(request.user)
-    if not kitchen_user and not staff_admin:
+    if not can_access_kitchen(request.user):
         waiter_redirect = redirect_waiter(request)
         if waiter_redirect:
             return waiter_redirect
@@ -309,7 +504,7 @@ def desempenho_cozinha(request):
 
     form = KitchenPreparationForm(request.POST or None)
     if request.method == 'POST':
-        if not kitchen_user:
+        if not is_kitchen_user(request.user):
             return HttpResponseForbidden('Somente a equipe da cozinha pode registrar preparos.')
         if form.is_valid():
             KitchenPreparation.objects.create(
@@ -343,11 +538,11 @@ def desempenho_cozinha(request):
         )
         preparation.status_class = slugify(preparation.status)
 
-    return render(request, 'core/desempenho_cozinha.html', {
-        'can_access_orders': can_access_orders(request.user),
-        'can_manage_staff': staff_admin,
+    return render(request, 'core/desempenho_metricas.html', {
+        'can_manage_staff': can_manage_staff(request.user),
         'can_access_kitchen': True,
-        'can_record_preparation': kitchen_user,
+        'can_access_cook_profile': can_access_cook_profile(request.user),
+        'can_record_preparation': is_kitchen_user(request.user),
         'form': form,
         'preparations': preparation_rows,
         'preparation_count': today_preparations.count(),
@@ -391,9 +586,9 @@ def funcionarios(request):
 
     return render(request, 'core/funcionarios.html', {
         'form': form,
-        'can_access_orders': can_access_orders(request.user),
         'can_manage_staff': True,
         'can_access_kitchen': can_access_kitchen(request.user),
+        'can_access_cook_profile': can_access_cook_profile(request.user),
     })
 
 
@@ -404,9 +599,9 @@ def clientes(request):
         return waiter_redirect
     return render(request, 'core/clientes.html', {
         'clientes': [],
-        'can_access_orders': can_access_orders(request.user),
         'can_manage_staff': can_manage_staff(request.user),
         'can_access_kitchen': can_access_kitchen(request.user),
+        'can_access_cook_profile': can_access_cook_profile(request.user),
     })
 
 
@@ -416,9 +611,9 @@ def configuracoes(request):
     if waiter_redirect:
         return waiter_redirect
     return render(request, 'core/configuracoes.html', {
-        'can_access_orders': can_access_orders(request.user),
         'can_manage_staff': can_manage_staff(request.user),
         'can_access_kitchen': can_access_kitchen(request.user),
+        'can_access_cook_profile': can_access_cook_profile(request.user),
     })
 
 
@@ -448,17 +643,17 @@ def relatorios(request):
         'report_data': report_data,
         'orders_count': len(orders) or 148,
         'orders_received': orders,
-        'can_access_orders': can_access_orders(request.user),
         'can_manage_staff': can_manage_staff(request.user),
         'can_access_kitchen': can_access_kitchen(request.user),
+        'can_access_cook_profile': can_access_cook_profile(request.user),
     })
 
 
 @login_required
 def home(request):
     return render(request, 'core/home.html', {
-        'can_access_orders': can_access_orders(request.user),
         'can_manage_staff': can_manage_staff(request.user),
         'can_access_kitchen': can_access_kitchen(request.user),
+        'can_access_cook_profile': can_access_cook_profile(request.user),
         'is_waiter': is_waiter(request.user),
     })

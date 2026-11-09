@@ -4,89 +4,621 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sabor Tech | Desempenho cozinha</title>
-  <link rel="stylesheet" href="{% static 'css/operacao.css' %}">
-  <link rel="stylesheet" href="{% static 'css/desempenho.css' %}">
+  <title>Sabor Tech | Perfil exclusivo do cozinheiro</title>
+  <style>
+    :root {
+      --bg: #f5f7f9;
+      --panel: #ffffff;
+      --dark: #18313f;
+      --muted: #60717d;
+      --line: #dfeaf1;
+      --green: #1aa66f;
+      --green-soft: #eafaf3;
+      --yellow: #d9a72b;
+      --yellow-soft: #fff4db;
+      --red: #dc4d4d;
+      --red-soft: #ffe1e1;
+      --blue: #1d7ad8;
+      --blue-soft: #eaf2ff;
+      --shadow: 0 18px 45px rgba(17, 38, 52, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--dark);
+    }
+    .kitchen-layout {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 236px minmax(0, 1fr);
+    }
+    .kitchen-sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      min-height: 100vh;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 30px 20px;
+      color: #fff;
+      background: #075f5c;
+    }
+    .kitchen-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 10px 24px;
+      border-bottom: 1px solid rgba(255,255,255,.16);
+    }
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      flex: 0 0 40px;
+      border-radius: 11px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      font-size: 1.35rem;
+    }
+    .kitchen-brand strong,
+    .kitchen-brand small {
+      display: block;
+    }
+    .kitchen-brand strong {
+      font-size: 1rem;
+      letter-spacing: .04em;
+    }
+    .kitchen-brand small {
+      margin-top: 4px;
+      color: rgba(255,255,255,.65);
+      font-size: .55rem;
+      letter-spacing: .12em;
+    }
+    .kitchen-profile-label {
+      margin: 20px 10px 0;
+      color: rgba(255,255,255,.66);
+      font-size: .7rem;
+    }
+    .kitchen-profile-label strong {
+      display: block;
+      margin-top: 5px;
+      color: #fff;
+      font-size: .85rem;
+    }
+    .kitchen-actions {
+      display: grid;
+      min-width: 0;
+      gap: 7px;
+      margin-top: 22px;
+    }
+    .kitchen-actions a,
+    .kitchen-actions button {
+      border: 0;
+      border-radius: 9px;
+      padding: 12px 14px;
+      color: rgba(255,255,255,.72);
+      background: transparent;
+      text-decoration: none;
+      text-align: left;
+      font: inherit;
+      font-size: .84rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .kitchen-actions a:hover,
+    .kitchen-actions a.active {
+      color: #fff;
+      background: rgba(255,255,255,.13);
+    }
+    .kitchen-actions form {
+      margin-top: auto;
+    }
+    .kitchen-main {
+      width: 100%;
+      max-width: 1450px;
+      min-width: 0;
+      padding: 44px clamp(24px, 5vw, 70px);
+    }
+    .kitchen-header {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+    .header-card,
+    .kitchen-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+    .header-card {
+      padding: 24px 26px;
+    }
+    .eyebrow {
+      margin: 0 0 10px;
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .header-card h1 {
+      margin: 0;
+      font-size: clamp(2rem, 3vw, 3rem);
+      line-height: 1.1;
+    }
+    .header-card p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      max-width: 640px;
+    }
+    .kitchen-entry {
+      padding: 20px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+    .kitchen-entry form {
+      display: grid;
+      gap: 12px;
+      width: 100%;
+    }
+    .kitchen-entry label {
+      display: grid;
+      gap: 6px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .kitchen-entry input,
+    .kitchen-entry select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 1rem;
+    }
+    .kitchen-entry button {
+      margin-top: 6px;
+      border: 0;
+      background: var(--blue);
+      color: #fff;
+      border-radius: 11px;
+      padding: 12px 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .form-messages {
+      margin: 0 0 20px;
+      background: var(--green-soft);
+      color: var(--green);
+      border: 1px solid rgba(26, 166, 111, 0.2);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 700;
+    }
+    .kitchen-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+    }
+    .kitchen-card {
+      padding: 16px;
+      display: grid;
+      gap: 16px;
+    }
+    .kitchen-card.priority-red {
+      border-color: var(--red);
+      box-shadow: 0 0 0 2px var(--red-soft), var(--shadow);
+    }
+    .kitchen-card.priority-yellow {
+      border-color: var(--yellow);
+    }
+    .timer-pending {
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      color: var(--muted);
+      background: #f7fafc;
+      font-weight: 700;
+    }
+    .kitchen-sound-toggle {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--dark);
+      background: #fff;
+      font: inherit;
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .kitchen-sound-toggle[aria-pressed="true"] {
+      border-color: var(--green);
+      color: var(--green);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .card-order {
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 6px;
+    }
+    .card-header h2 {
+      margin: 0;
+      font-size: 1.45rem;
+    }
+    .status-pill {
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+    .status-pill.pending { background: var(--blue-soft); color: var(--blue); }
+    .status-pill.preparing { background: var(--yellow-soft); color: var(--yellow); }
+    .status-pill.ready { background: var(--green-soft); color: var(--green); }
+    .traffic-light {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      position: relative;
+      display: grid;
+      place-items: center;
+      border: 6px solid rgba(0,0,0,0.08);
+      font-weight: 800;
+      color: rgba(0,0,0,0.45);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+    }
+    .traffic-light.green { background: var(--green); color: #fff; }
+    .traffic-light.yellow { background: var(--yellow); color: #fff; }
+    .traffic-light.red { background: var(--red); color: #fff; }
+    .traffic-light.done { background: var(--green-soft); color: var(--green); }
+    .timer-box {
+      background: #f7fafc;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .timer-box span {
+      display: block;
+      font-size: 0.73rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .timer-box strong {
+      display: block;
+      font-size: clamp(1.8rem, 2vw, 2.6rem);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .timer-box small {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .items-box h3,
+    .observacao-box h3 {
+      margin: 0 0 10px;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .items-box ul {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+      color: var(--dark);
+      line-height: 1.5;
+      font-weight: 600;
+    }
+    .observacao-box {
+      background: #fbfcfe;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .card-actions form {
+      margin: 0;
+      flex: 1;
+    }
+    .card-actions button {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--dark);
+      color: #fff;
+    }
+    .card-actions .ready-button {
+      background: var(--green);
+    }
+    .empty-state {
+      grid-column: 1 / -1;
+      background: var(--panel);
+      border: 1px dashed var(--line);
+      border-radius: 18px;
+      padding: 26px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+    @media (max-width: 880px) {
+      .kitchen-header {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 980px) {
+      .kitchen-layout {
+        grid-template-columns: 1fr;
+      }
+      .kitchen-sidebar {
+        position: static;
+        height: auto;
+        min-height: auto;
+        padding: 18px 22px;
+      }
+      .kitchen-brand {
+        padding-bottom: 16px;
+      }
+      .kitchen-profile-label {
+        margin-top: 12px;
+      }
+      .kitchen-actions {
+        display: flex;
+        width: 100%;
+        overflow-x: auto;
+        margin-top: 14px;
+      }
+      .kitchen-actions a {
+        flex: 0 0 auto;
+        white-space: nowrap;
+      }
+      .kitchen-actions form {
+        display: none;
+      }
+      .kitchen-main {
+        padding: 32px 24px;
+      }
+    }
+    @media (max-width: 560px) {
+      .kitchen-sidebar {
+        padding: 16px;
+      }
+      .kitchen-actions a {
+        padding: 10px 11px;
+        font-size: .78rem;
+      }
+      .kitchen-main {
+        padding: 24px 16px;
+      }
+      .card-header {
+        flex-direction: column;
+      }
+      .meta-row {
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="ops-shell">
-    <aside class="ops-sidebar">
-      <div class="ops-brand"><span class="ops-brand-mark">+</span><div><strong>Sabor Tech</strong><small>GESTÃO INTELIGENTE</small></div></div>
-      <nav class="ops-nav" aria-label="Navegação principal">
+  <div class="kitchen-layout">
+    <aside class="kitchen-sidebar">
+      <div class="kitchen-brand">
+        <span class="brand-mark">+</span>
+        <div>
+          <strong>Sabor Tech</strong>
+          <small>Gestão inteligente</small>
+        </div>
+      </div>
+      <nav class="kitchen-actions" aria-label="Navegação principal">
         <a href="{% url 'core:home' %}">Home</a>
-        <a href="{% url 'core:atendimento' %}">Atendimento</a>
-        {% if can_access_orders %}<a href="{% url 'core:pedidos' %}">Pedidos</a>{% endif %}
-        <a href="{% url 'core:produtos' %}">Cardápio</a>
-        <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
-        <a class="active" href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>
-        <a href="{% url 'core:relatorios' %}">Relatórios</a>
-        {% if can_manage_staff %}<a href="{% url 'core:funcionarios' %}">Funcionários</a>{% endif %}
+        {% if can_manage_staff %}
+          <a href="{% url 'core:atendimento' %}">Atendimento</a>
+          <a href="{% url 'core:produtos' %}">Cardápio</a>
+          <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
+          <a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>
+          <a class="active" href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>
+          <a href="{% url 'core:relatorios' %}">Relatórios</a>
+          <a href="{% url 'core:funcionarios' %}">Funcionários</a>
+        {% else %}
+          <a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>
+          <a class="active" href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>
+        {% endif %}
+        <form method="post" action="{% url 'core:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form>
       </nav>
-      <form class="ops-logout" method="post" action="{% url 'core:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form>
     </aside>
 
-    <main class="ops-main kitchen-main">
-      <header class="ops-header">
-        <div><p class="ops-eyebrow">GESTÃO DA COZINHA</p><h1>Desempenho</h1><p>Acompanhe os preparos feitos por cozinheiros e auxiliares.</p></div>
-        <div class="kitchen-header-actions">
-          {% if can_record_preparation %}
-            <details class="kitchen-entry" {% if form.errors %}open{% endif %}>
-              <summary>+ Registrar preparo</summary>
-              <form method="post" class="kitchen-entry-form">
-                {% csrf_token %}
-                <label>Preparo {{ form.dish_name }}{% for error in form.dish_name.errors %}<small class="form-errors">{{ error }}</small>{% endfor %}</label>
-                <label>Status {{ form.status }}{% for error in form.status.errors %}<small class="form-errors">{{ error }}</small>{% endfor %}</label>
-                <label>Duração (min) {{ form.duration_minutes }}{% for error in form.duration_minutes.errors %}<small class="form-errors">{{ error }}</small>{% endfor %}</label>
-                <button class="kitchen-submit" type="submit">Salvar preparo</button>
-              </form>
-            </details>
+    <main class="kitchen-main">
+    <header class="kitchen-header">
+      <section class="header-card">
+        <p class="eyebrow">PAINEL OPERACIONAL</p>
+        <h1>Perfil exclusivo do cozinheiro</h1>
+        <p>Confirme os pedidos, acompanhe o tempo e marque como pronto.</p>
+      </section>
+    </header>
+
+    {% if messages %}
+      {% for message in messages %}
+        <p class="form-messages">{{ message }}</p>
+      {% endfor %}
+    {% endif %}
+
+    <section class="kitchen-grid">
+      {% for order in kitchen_orders %}
+        <article class="kitchen-card priority-{{ order.traffic_light }}">
+          <div class="card-header">
+            <div>
+              <p class="card-order">Pedido #{{ order.id|stringformat:"03d" }}</p>
+              <h2>{{ order.status }}</h2>
+            </div>
+            {% if order.confirmed_at_ms %}<span class="traffic-light {{ order.traffic_light }}" data-kitchen-light="{{ order.id }}" data-light="{{ order.traffic_light }}" aria-label="Farol {{ order.traffic_light }}">{{ order.traffic_light|slice:":1" }}</span>{% endif %}
+          </div>
+
+          {% if order.confirmed_at_ms %}
+            <div class="timer-box" data-kitchen-timer="{{ order.id }}" data-confirmed-at-ms="{{ order.confirmed_at_ms }}" data-ready-at-ms="{{ order.ready_at_ms|default_if_none:'' }}" data-server-now-ms="{{ server_now_ms }}">
+              <span>Tempo de preparo</span>
+              <strong data-elapsed-time>{{ order.elapsed_label }}</strong>
+              <small data-timer-trend>{{ order.trend_label }}</small>
+            </div>
+          {% else %}
+            <div class="timer-pending">O cronômetro e o farol iniciam após a confirmação.</div>
           {% endif %}
-          <a class="ops-back" href="{% url 'core:home' %}">← Voltar à Home</a>
-        </div>
-      </header>
 
-      {% if messages %}{% for message in messages %}<p class="form-messages">{{ message }}</p>{% endfor %}{% endif %}
-
-      <section class="ops-stats" aria-label="Indicadores da cozinha">
-        <article class="ops-stat"><span>Preparos hoje</span><strong>{{ preparation_count|stringformat:"02d" }}</strong><small>Registros do dia</small></article>
-        <article class="ops-stat"><span>Tempo médio</span><strong>{{ average_duration }} min</strong><small>Preparos concluídos</small></article>
-        <article class="ops-stat"><span>Cozinheiros ativos</span><strong>{{ active_cooks|stringformat:"02d" }}</strong><small>Contas ativas</small></article>
-        <article class="ops-stat"><span>Auxiliares ativos</span><strong>{{ active_assistants|stringformat:"02d" }}</strong><small>Contas ativas</small></article>
-      </section>
-
-      <section class="ops-panel kitchen-panel">
-        <header class="kitchen-panel-heading">
-          <div><p class="ops-eyebrow">PRODUÇÃO</p><h2>Preparos realizados</h2></div>
-          <form method="get" class="kitchen-filter">
-            <select name="perfil" aria-label="Filtrar equipe da cozinha">
-              <option value="todos" {% if profile_filter == 'todos' %}selected{% endif %}>Todos da cozinha</option>
-              <option value="cozinheiros" {% if profile_filter == 'cozinheiros' %}selected{% endif %}>Cozinheiros</option>
-              <option value="auxiliares" {% if profile_filter == 'auxiliares' %}selected{% endif %}>Auxiliares</option>
-            </select>
-            <button type="submit">Filtrar</button>
-          </form>
-        </header>
-        <div class="kitchen-table-wrap">
-          <table class="kitchen-table">
-            <thead><tr><th>Preparo</th><th>Responsável</th><th>Perfil</th><th>Horário</th><th>Duração</th><th>Status</th></tr></thead>
-            <tbody>
-              {% for preparation in preparations %}
-                <tr>
-                  <td class="kitchen-dish">{{ preparation.dish_name }}</td>
-                  <td>{{ preparation.responsible.get_full_name|default:preparation.responsible.username }}</td>
-                  <td><span class="kitchen-profile {{ preparation.profile_label|slugify }}">{{ preparation.profile_label }}</span></td>
-                  <td>{{ preparation.created_label }}</td>
-                  <td class="kitchen-duration">{{ preparation.duration_label }}</td>
-                  <td><span class="kitchen-status {{ preparation.status_class }}">{{ preparation.status }}</span></td>
-                </tr>
-              {% empty %}
-                <tr><td colspan="6" class="kitchen-empty">Nenhum preparo registrado ainda. A equipe da cozinha pode incluir o primeiro preparo.</td></tr>
+          <div class="items-box">
+            <h3>Itens do pedido</h3>
+            <ul>
+              {% for item in order.items %}
+                <li>{{ item }}</li>
               {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            </ul>
+          </div>
+
+          {% if order.observation %}
+            <div class="observacao-box">
+              <h3>Observação</h3>
+              <span>{{ order.observation }}</span>
+            </div>
+          {% endif %}
+
+          <div class="meta-row">
+            <span>Mesa {{ order.table_number|default:'--' }}</span>
+            <span>Garçom: {{ order.responsible }}</span>
+          </div>
+
+          {% if can_record_preparation %}<div class="card-actions">
+            {% if order.status == 'Pronto' %}
+              <span class="status-pill ready">Pedido pronto</span>
+            {% else %}
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="order_id" value="{{ order.id }}">
+                <input type="hidden" name="action" value="{% if not order.confirmed_at_ms %}confirm_order{% else %}ready_order{% endif %}">
+                <button type="submit" class="{% if order.confirmed_at_ms and order.status == 'Em preparo' %}ready-button{% endif %}">{% if not order.confirmed_at_ms %}Confirmar pedido{% else %}Marcar como pronto{% endif %}</button>
+              </form>
+            {% endif %}
+          </div>{% endif %}
+        </article>
+      {% empty %}
+        <div class="empty-state">Nenhum pedido em preparo no momento. A fila da cozinha está livre.</div>
+      {% endfor %}
+    </section>
     </main>
   </div>
+  <script>
+    (() => {
+      const timers = Array.from(document.querySelectorAll('[data-kitchen-timer]'));
+      const soundToggle = document.getElementById('kitchenSoundToggle');
+      let soundEnabled = false;
+      let audioContext = null;
+      const clientRenderedAt = Date.now();
+
+      function playAlert(state) {
+        if (!soundEnabled || !audioContext) return;
+        const tones = state === 'red' ? [880, 880] : [620];
+        tones.forEach((frequency, index) => {
+          const oscillator = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          const startAt = audioContext.currentTime + index * 0.22;
+          oscillator.frequency.value = frequency;
+          gain.gain.setValueAtTime(0.0001, startAt);
+          gain.gain.exponentialRampToValueAtTime(0.06, startAt + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.16);
+          oscillator.connect(gain);
+          gain.connect(audioContext.destination);
+          oscillator.start(startAt);
+          oscillator.stop(startAt + 0.17);
+        });
+      }
+
+      if (soundToggle) {
+        soundToggle.addEventListener('click', async () => {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) {
+            soundToggle.textContent = 'Som indisponível';
+            soundToggle.disabled = true;
+            return;
+          }
+          if (!audioContext) audioContext = new AudioContextClass();
+          await audioContext.resume();
+          soundEnabled = !soundEnabled;
+          soundToggle.setAttribute('aria-pressed', String(soundEnabled));
+          soundToggle.textContent = soundEnabled ? 'Desativar alerta sonoro' : 'Ativar alerta sonoro';
+        });
+      }
+
+      function updateKitchenTimers() {
+        timers.forEach((timer) => {
+          const startedAt = Number(timer.dataset.confirmedAtMs);
+          const readyAt = Number(timer.dataset.readyAtMs) || 0;
+          const serverNow = Number(timer.dataset.serverNowMs) + (Date.now() - clientRenderedAt);
+          const elapsedSeconds = Math.max(0, Math.floor(((readyAt || serverNow) - startedAt) / 1000));
+          const minutes = Math.floor(elapsedSeconds / 60);
+          const seconds = elapsedSeconds % 60;
+          const elapsed = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+          const state = readyAt ? 'done' : elapsedSeconds < 1200 ? 'green' : elapsedSeconds < 1800 ? 'yellow' : 'red';
+          const card = timer.closest('.kitchen-card');
+          const light = card.querySelector('[data-kitchen-light]');
+          const trend = timer.querySelector('[data-timer-trend]');
+          timer.querySelector('[data-elapsed-time]').textContent = readyAt ? `Pronto · ${elapsed}` : elapsed;
+          trend.textContent = state === 'done' ? 'Pedido concluído' : state === 'green' ? 'Tempo dentro do esperado' : state === 'yellow' ? 'Atenção ao tempo' : 'Pedido atrasado · prioridade';
+          card.classList.remove('priority-green', 'priority-yellow', 'priority-red', 'priority-done');
+          card.classList.add(`priority-${state}`);
+          if (light) {
+            const previousState = light.dataset.light;
+            light.classList.remove('green', 'yellow', 'red', 'done');
+            light.classList.add(state);
+            light.dataset.light = state;
+            light.textContent = state === 'done' ? '✓' : state === 'red' ? '!' : state === 'yellow' ? 'A' : 'G';
+            light.setAttribute('aria-label', state === 'done' ? 'Pedido pronto' : `Farol ${state}`);
+            if (state !== previousState && (state === 'yellow' || state === 'red')) playAlert(state);
+          }
+        });
+      }
+
+      updateKitchenTimers();
+      if (timers.some((timer) => !Number(timer.dataset.readyAtMs))) {
+        window.setInterval(updateKitchenTimers, 1000);
+      }
+    })();
+  </script>
 </body>
 </html>

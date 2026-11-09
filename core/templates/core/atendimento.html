@@ -14,10 +14,10 @@
       <nav class="ops-nav" aria-label="Navegação principal">
         <a href="{% url 'core:home' %}">Home</a>
         <a class="active" href="{% url 'core:atendimento' %}">Atendimento</a>
-        {% if can_access_orders %}<a href="{% url 'core:pedidos' %}">Pedidos</a>{% endif %}
-        <a href="{% url 'core:produtos' %}">Cardápio</a>
+        {% if can_manage_staff %}<a href="{% url 'core:produtos' %}">Cardápio</a>{% endif %}
         <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
         {% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}
+        {% if can_access_cook_profile %}<a href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>{% endif %}
         <a href="{% url 'core:relatorios' %}">Relatórios</a>
         {% if can_manage_staff %}<a href="{% url 'core:funcionarios' %}">Funcionários</a>{% endif %}
       </nav>
@@ -27,7 +27,6 @@
     <main class="ops-main">
       <header class="ops-header">
         <div><p class="ops-eyebrow">OPERAÇÃO DO RESTAURANTE</p><h1>Atendimento</h1><p>Acompanhe mesas, status e entregas em tempo real.</p></div>
-        <a class="ops-back" href="{% url 'core:home' %}">← Voltar à Home</a>
       </header>
 
       <section class="ops-stats" aria-label="Resumo do atendimento">

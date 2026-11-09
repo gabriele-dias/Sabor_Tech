@@ -20,13 +20,12 @@
       <div><p class="eyebrow">Calculadora de receitas</p><h2>Fichas técnicas e custos</h2></div>
     </div>
     <div class="action-grid">
-      <a class="action-card action-card-featured" href="{% url 'core:produtos' %}"><span class="action-icon">+</span><span><strong>Abrir cardápio</strong><small>Gerencie produtos e preços</small></span><b>-></b></a>
+      {% if can_manage_staff %}<a class="action-card action-card-featured" href="{% url 'core:produtos' %}"><span class="action-icon">+</span><span><strong>Abrir cardápio</strong><small>Gerencie produtos e preços</small></span><b>-></b></a>{% endif %}
       <a class="action-card" href="{% url 'core:receitas' %}"><span class="action-icon">*</span><span><strong>Adicionar nova receita</strong><small>Associe insumos e quantidades</small></span><b>-></b></a>
       <a class="action-card" href="#calculo"><span class="action-icon">=</span><span><strong>Calcular receita</strong><small>Veja custo total e por pessoa</small></span><b>-></b></a>
-      <a class="action-card" href="{% url 'core:produtos' %}"><span class="action-icon">#</span><span><strong>Ver produtos do cardápio</strong><small>Consulte itens e disponibilidade</small></span><b>-></b></a>
+      {% if can_manage_staff %}<a class="action-card" href="{% url 'core:produtos' %}"><span class="action-icon">#</span><span><strong>Ver produtos do cardápio</strong><small>Consulte itens e disponibilidade</small></span><b>-></b></a>{% endif %}
       <a class="action-card" href="#receitas"><span class="action-icon">[]</span><span><strong>Ver receitas cadastradas</strong><small>Revise suas fichas técnicas</small></span><b>-></b></a>
       <a class="action-card" href="/relatorios/"><span class="action-icon">%</span><span><strong>Ver histórico de cálculos</strong><small>Acompanhe consumo e resultados</small></span><b>-></b></a>
-      <a class="action-card action-card-exit" href="{% url 'core:home' %}"><span class="action-icon">&lt;-</span><span><strong>Voltar à Home</strong><small>Retornar ao menu principal</small></span><b>-></b></a>
     </div>
   </section>
 

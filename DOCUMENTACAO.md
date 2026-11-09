@@ -126,46 +126,38 @@ As rotas usam nomes Django. Templates devem preferir `{% url 'core:nome' %}` a c
 | `core:home` | `/home/` | Home administrativa ou Home limitada para garçons |
 | `core:home-root` | `/` | Alias da Home |
 | `core:dashboard` | `/dashboard/` | Dashboard legado, fora da navegação normal |
-| `core:pedidos` | `/pedidos/` | Catálogo para montar pedidos; superusuário e garçons |
+| `core:pedidos` | `/pedidos/` | Catálogo de pedidos, acessível somente ao grupo Garçom após autenticar |
 | `core:concluir_pedido` | `/pedidos/concluir/` | Recebe JSON via POST e persiste um pedido |
 | `core:atendimento` | `/atendimento/` | Acompanhamento de pedidos e mesas |
-| `core:desempenho_cozinha` | `/desempenho-cozinha/` | Registro e indicadores da produção da cozinha |
-| `core:produtos` | `/produtos/` | Catálogo administrativo de produtos |
+| `core:desempenho_cozinha` | `/desempenho-cozinha/` | Indicadores e histórico de preparos da cozinha |
+| `core:perfil_cozinheiro` | `/perfil-cozinheiro/` | Painel operacional de pedidos, permitido a cozinheiros e administradores |
+| `core:produtos` | `/produtos/` | Catálogo de produtos, exclusivo de Gestão/superusuário |
 | `core:receitas` | `/receitas/` | Formulário de ficha técnica |
 | `core:relatorios` | `/relatorios/` | Gráficos e análises operacionais |
 | `core:funcionarios` | `/funcionarios/` | Cadastro de contas e perfis de funcionários |
 | `core:funcionarios_novo` | `/funcionarios/novo/` | Alias do cadastro de funcionário |
-| `core:clientes` | `/clientes/` | Tela legada de clientes |
-| `core:configuracoes` | `/configuracoes/` | Tela legada de configurações |
+| `core:clientes` | `/clientes/` | Tela legada de clientes, sem atalho nos menus |
+| `core:configuracoes` | `/configuracoes/` | Tela legada de configurações, sem atalho nos menus |
 
 O item Dashboard foi removido dos menus e dos atalhos da Home. A rota permanece para compatibilidade enquanto telas, testes ou links antigos ainda possam referenciá-la. Não é um item da navegação cotidiana.
+Clientes e Configurações também foram retirados dos menus e permanecem acessíveis somente por URL legada.
 
-### Regra de retorno
+### Navegação por perfil
 
-- As telas internas expõem um botão `Voltar à Home` ou um link Home claramente visível.
-- A Home não precisa de botão de retorno; ela oferece `Sair` por formulário POST com token CSRF.
-- Pedidos mantém seu menu próprio por categorias. O cabeçalho inclui `Voltar à Home` e a sidebar oferece destinos compatíveis com o perfil.
-- A Home é acessível a garçons, mas mostra apenas Home, Atendimento, Pedidos e Sair; as views administrativas continuam protegidas.
-
-| Tela | Retorno esperado |
-|---|---|
-| Home | `Sair`, encerra sessão e abre Login |
-| Pedidos | `Voltar à Home` |
-| Atendimento | `Voltar à Home` |
-| Cardápio | `Voltar à Home` junto de Novo produto |
-| Adicionar receitas | `Voltar à Home` |
-| Desempenho cozinha | `Voltar à Home` |
-| Relatórios | `Voltar à Home` |
-| Novo funcionário | `Voltar à Home` |
-| Dashboard legado | `Voltar à Home` pelo layout compartilhado |
-| Clientes e Configurações | `Voltar à Home` pelo layout compartilhado |
-| Login | Não oferece Home autenticada; o redirect após login depende do perfil |
+- A tela Pedidos é aberta diretamente pelo redirect pós-login do grupo `Garçom`. Não há atalhos de navegação para ela nas demais páginas, e outros perfis são redirecionados se tentarem abrir sua URL.
+- A Home é acessível a garçons, mas apresenta somente Atendimento e Sair, além da navegação Home. As views administrativas continuam protegidas.
+- O Cardápio (`/produtos/`) é exclusivo de superusuários e membros do grupo `Gestão`. A view valida essa permissão no servidor e os menus de outros perfis não exibem o link.
+- Desempenho da cozinha (`/desempenho-cozinha/`) é a tela separada de indicadores e histórico; Gestão/superusuário e equipe de cozinha podem consultar. Cozinheiros e auxiliares podem registrar preparos.
+- O Perfil exclusivo do cozinheiro (`/perfil-cozinheiro/`) permite leitura a Gestão/superusuário e operação ao grupo `Chefe de Cozinha`. Garçons, clientes e auxiliares não acessam essa rota; o backend valida o perfil. O login de cozinheiro redireciona diretamente para ela.
+- As telas internas mantêm seus links de navegação habituais, mas não apresentam botões ou links rotulados `Voltar`.
+- Na Home, `Sair` é um formulário POST com token CSRF que encerra a sessão e retorna ao Login.
+- Pedidos mantém as categorias do catálogo e acesso a Atendimento/Sair; não tem botão Voltar nem atalho próprio para a rota Pedidos.
 
 ## 6. Autenticação, grupos e permissões
 
 ### 6.1 Login
 
-`core/forms.py` define `CardapioLoginForm`, que altera rótulos e placeholders do formulário padrão Django. `RoleLoginView` em `core/views.py` usa esse formulário e direciona garçons para a tela de Pedidos. Outros usuários seguem o redirect padrão da autenticação.
+`core/forms.py` define `CardapioLoginForm`, que altera rótulos e placeholders do formulário padrão Django. `RoleLoginView` em `core/views.py` usa esse formulário e direciona garçons diretamente para a tela de Pedidos. Outros usuários seguem o redirect padrão da autenticação.
 
 O usuário precisa estar autenticado para acessar as views protegidas por `@login_required`.
 
@@ -187,8 +179,10 @@ Em `core/views.py`:
 - `is_waiter(user)` verifica o grupo `Garçom`;
 - `can_access_orders(user)` permite a rota Pedidos a superusuário ou garçom;
 - `can_manage_staff(user)` autoriza superusuário ou membro de `Gestão`;
+- `can_manage_staff(user)` também controla o acesso à tela Cardápio;
 - `is_kitchen_user(user)` verifica `Chefe de Cozinha` ou `Auxiliar de cozinha`;
-- `can_access_kitchen(user)` permite Gestão/superusuário e equipe da cozinha;
+- `can_access_kitchen(user)` permite Gestão/superusuário e equipe da cozinha para Desempenho;
+- `can_access_cook_profile(user)` permite cozinheiro e Gestão/superusuário na tela operacional; ações são restritas a `Chefe de Cozinha`;
 - `redirect_waiter(request)` centraliza o destino seguro do garçom.
 
 As mesmas regras controlam a view e a apresentação dos links. Esconder um link no template não substitui a autorização na view: cada view protegida deve validar o perfil no servidor.
@@ -273,13 +267,13 @@ Permite Gestão, superusuário, garçom e equipe de cozinha. Lê os pedidos rece
 
 Pedidos sem metadados de cliente são exibidos com o nome do garçom associado. Isso é um fallback de apresentação, não uma afirmação de que o garçom seja o cliente.
 
-### 9.6 `desempenho_cozinha`
+### 9.6 Desempenho e perfil de cozinheiro
 
-Permite Gestão, superusuários, `Chefe de Cozinha` e `Auxiliar de cozinha`. Usuário sem acesso vai à Home; garçom vai diretamente a Pedidos.
+`desempenho_cozinha` é a tela de indicadores e histórico de preparos; não contém a fila operacional de pedidos. Gestão/superusuário e equipe da cozinha podem consultar. Cozinheiros e auxiliares podem registrar preparos pelo formulário dessa tela.
 
-Um membro da cozinha pode enviar POST para registrar preparo. O responsável é sempre `request.user`, não um campo livre, impedindo atribuição a outra conta pela interface. O filtro restringe a tabela por grupo. Indicadores usam registros reais da data local atual, média apenas de durações concluídas e contagens de contas ativas nos grupos.
+`perfil_cozinheiro` é o painel operacional separado. O login do grupo `Chefe de Cozinha` redireciona diretamente para `/perfil-cozinheiro/`. Cozinheiros podem confirmar pedidos, acompanhar o cronômetro e marcá-los como prontos. Gestão/superusuário, incluindo `gabriele@gmail.com` no banco local, pode consultar sem controles de operação. Garçons, clientes, auxiliares e usuários sem permissão são bloqueados pelo backend.
 
-Gestores podem consultar e filtrar os registros, mas não podem registrar pela view: somente membros dos grupos de cozinha executam o POST.
+O farol e o cronômetro só aparecem depois da confirmação. O horário é salvo no servidor; o navegador atualiza a cada segundo e mantém a contagem após reload. Verde cobre 0 a 19:59, amarelo 20 a 29:59 e vermelho começa em 30 minutos. Pedidos atrasados aparecem primeiro e têm destaque. Ao marcar como pronto, `ready_at` congela a contagem. O alerta sonoro é opcional e ativado pelo cozinheiro.
 
 ### 9.7 `funcionarios`
 
@@ -287,7 +281,9 @@ Restrita a Gestão e superusuário. Valida `StaffCreateForm`, cria uma conta com
 
 ### 9.8 `produtos` e `receitas`
 
-Protegidas contra garçons. Atualmente o catálogo e a ficha de receita ainda usam dados/protótipos de interface; o envio do formulário de receita exibe uma confirmação, mas não persiste uma entidade `Receita` no modelo atual.
+`produtos` é o Cardápio administrativo e permite somente superusuários e membros do grupo `Gestão`; os demais perfis são redirecionados à Home (garçons seguem o redirect para Pedidos). A consulta exige uma associação ativa com empresa e lista os produtos dessa empresa, ordenados por categoria e nome. A tela permite busca e filtro por categoria; o botão Novo produto encaminha à ficha de receita.
+
+`receitas` exige autenticação e associação ativa com empresa. O formulário cadastra produto, rendimento, tempo de preparo e ingredientes, persistindo os dados em `Product`, `Recipe`, `Ingredient` e `RecipeIngredient`. Após salvar, retorna ao Cardápio; como essa tela é administrativa, usuários sem permissão não conseguem acessá-la pelo link nem pela URL.
 
 ### 9.9 `relatorios`
 
@@ -313,15 +309,16 @@ Os templates em `core/templates/core/` definem o HTML e usam tags Django:
 - `home.html`: entrada por perfil, navegação, cartões permitidos e botão Sair por POST;
 - `pedidos.html`: catálogo para montar pedidos; comportamento do carrinho e POST para concluir pedido;
 - `atendimento.html`: resumo, busca/filtro, lista de pedidos e grade de mesas;
-- `produtos.html`: lista, busca e filtro de produtos; botão Novo produto encaminha ao formulário de receitas;
+- `produtos.html`: Cardápio exclusivo de Gestão/superusuário, com lista da empresa ativa, busca e filtro por categoria; botão Novo produto encaminha à tela de receitas;
 - `receitas.html`: formulário de ficha e cálculo visual de custo;
-- `desempenho_cozinha.html`: indicadores, filtro de equipe, tabela e formulário de preparo recolhível;
+- `desempenho_cozinha.html`: template operacional legado do Perfil exclusivo do cozinheiro;
+- `desempenho_metricas.html`: indicadores, filtro e histórico de preparos da tela Desempenho da cozinha;
 - `funcionarios.html`: criação de conta e seleção de grupo;
 - `relatorios.html`: filtros, métricas, gráficos, mapa de movimento e exportação;
 - `base.html`: casca histórica compartilhada por Dashboard, Clientes e Configurações;
 - `_orders.html` e `_clients_list.html`: fragmentos legados de lista.
 
-A navegação pode variar por papel, mas cada página interna oferece retorno à Home. A tela especial de Pedidos mantém atalhos próprios sem expor links administrativos aos garçons.
+A navegação varia por papel e não há controles dedicados de retorno. A tela de Pedidos não é linkada nos menus; garçons chegam a ela pelo redirect pós-login.
 
 ## 11. CSS e responsividade
 
@@ -389,7 +386,7 @@ Os testes em `core/tests.py` cobrem:
 - renderização e filtros do Dashboard legado;
 - registro, métricas, duração e filtro da cozinha;
 - permissões de cadastro de funcionários;
-- links e retorno às telas.
+- links permitidos por perfil e ausência de controles `Voltar`.
 
 Testes usam banco temporário criado pelo Django; não gravam registros de validação no SQLite local.
 
@@ -402,7 +399,7 @@ Testes usam banco temporário criado pelo Django; não gravam registros de valid
 5. Criar o template em `core/templates/core/` e referenciar estáticos com `{% static %}`.
 6. Criar/atualizar CSS em `frontend/static/css/` seguindo o shell comum.
 7. Adicionar links condicionais nos menus relevantes, sempre com `{% url %}`.
-8. Incluir botão de retorno à Home nas telas internas; conservar Sair na Home.
+8. Manter links normais de navegação por perfil, sem controles `Voltar`; conservar Sair na Home.
 9. Criar testes de acesso, sucesso, validação, estado vazio e caminhos do menu.
 10. Executar `manage.py check`, os testes afetados e a suíte completa.
 11. Inspecionar diff e status para garantir que arquivos locais como `db.sqlite3` não entrem no commit.
@@ -491,11 +488,12 @@ Este inventário explica a responsabilidade dos arquivos de código atualmente p
 - `login.html`: formulário visual de login; recebe campos e erros da autenticação Django.
 - `home.html`: Home por perfil, navegação, cartões e logout POST. Para garçons apresenta apenas rotas de atendimento autorizadas.
 - `dashboard.html`: Dashboard administrativo histórico, acessível diretamente mas removido dos menus; ainda é usado por testes e por compatibilidade de pedidos recebidos.
-- `pedidos.html`: categorias, produtos, carrinho, taxa, total, POST JSON com CSRF, retorno Home e navegação recolhível.
+- `pedidos.html`: categorias, produtos, carrinho, taxa, total, POST JSON com CSRF e navegação recolhível; o login de garçom redireciona diretamente para essa página.
 - `atendimento.html`: indicadores e filtros dos pedidos, linhas da operação, mapa de mesas e links por grupo.
-- `produtos.html`: catálogo administrativo, pesquisa, filtro e ação Novo produto, além de retorno à Home.
+- `produtos.html`: catálogo exclusivo de Gestão/superusuário, com pesquisa, filtro por categoria e produtos da empresa ativa; Home permanece na navegação normal.
 - `receitas.html`: formulário visual da ficha técnica, linhas dinâmicas de ingrediente e custo estimado; o cadastro ainda não grava modelo de receita.
-- `desempenho_cozinha.html`: resumo da produção, filtro por perfil, tabela persistida, retorno Home e formulário de preparo para cozinheiros/auxiliares.
+- `desempenho_cozinha.html`: painel operacional do perfil de cozinheiro, com fila, farol e ações de pedido;
+- `desempenho_metricas.html`: resumo da produção, filtro por perfil, tabela persistida e formulário de preparo.
 - `funcionarios.html`: formulário de criação de usuário, senha, e-mail e seleção de grupo; apresenta validação e mensagens.
 - `relatorios.html`: filtros, indicadores demonstrativos, gráficos Chart.js, mapa horário, análises demonstrativas e exportação/impressão.
 - `clientes.html`: tela legada com lista vazia porque não há modelo de Cliente ativo.
@@ -514,7 +512,7 @@ O settings ativo adiciona essa pasta a `TEMPLATES[0]['DIRS']`. Ela contém `base
 - `home.css`: shell e cartões da Home.
 - `dashboard.css`: estilos do Dashboard legado.
 - `pedidos.css`: layout de pedidos, categorias, catálogo e resumo lateral.
-- `cardapio.css`: catálogo administrativo e botão de retorno.
+- `cardapio.css`: catálogo administrativo.
 - `receitas.css`: ficha técnica e linhas de ingredientes.
 - `operacao.css`: sidebar e componentes comuns de Atendimento/Funcionários.
 - `desempenho.css`: tabela, filtros e formulário da equipe de cozinha.

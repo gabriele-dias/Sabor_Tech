@@ -12,7 +12,7 @@
       <aside class="menu-sidebar">
         <div class="menu-brand"><span>+</span><div><strong>Sabor Tech</strong><small>GESTÃO INTELIGENTE</small></div></div>
         <nav class="menu-nav">
-          <a href="{% url 'core:home' %}">Home</a><a href="{% url 'core:atendimento' %}">Atendimento</a>{% if can_access_orders %}<a href="{% url 'core:pedidos' %}">Pedidos</a>{% endif %}<a class="active" href="{% url 'core:produtos' %}">Cardápio</a><a href="{% url 'core:receitas' %}">Adicionar receitas</a>{% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}<a href="{% url 'core:relatorios' %}">Relatórios</a>{% if can_manage_staff %}<a href="{% url 'core:funcionarios' %}">Funcionários</a>{% endif %}
+          <a href="{% url 'core:home' %}">Home</a><a href="{% url 'core:atendimento' %}">Atendimento</a><a class="active" href="{% url 'core:produtos' %}">Cardápio</a><a href="{% url 'core:receitas' %}">Adicionar receitas</a>{% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}{% if can_access_cook_profile %}<a href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>{% endif %}<a href="{% url 'core:relatorios' %}">Relatórios</a>{% if can_manage_staff %}<a href="{% url 'core:funcionarios' %}">Funcionários</a>{% endif %}
         </nav>
         <form method="post" action="{% url 'core:logout' %}" class="menu-logout">{% csrf_token %}<button type="submit">Sair</button></form>
       </aside>
@@ -20,7 +20,7 @@
       <main class="menu-main">
         <header class="menu-header">
           <div><p class="menu-eyebrow">CATÁLOGO DO RESTAURANTE</p><h1>Cardápio</h1><p>Organize seus produtos, preços e disponibilidade em um só lugar.</p></div>
-          <div class="menu-header-actions"><a class="menu-home-link" href="{% url 'core:home' %}">← Voltar à Home</a><button class="primary-button" type="button" id="newProductButton">+ Novo produto</button></div>
+          <div class="menu-header-actions"><button class="primary-button" type="button" id="newProductButton">+ Novo produto</button></div>
         </header>
         <section class="menu-toolbar">
           <label class="menu-search"><span>⌕</span><input id="menuSearch" type="search" placeholder="Buscar no cardápio..." aria-label="Buscar no cardápio"></label>
@@ -29,9 +29,9 @@
         <section class="menu-meta"><strong><span id="productCount">{{ produtos|length }}</span> produtos</strong><span>Atualizado hoje · preços em reais</span></section>
         <section class="menu-grid" id="menuGrid">
           {% for produto in produtos %}
-            <article class="menu-card" data-category="{{ produto.categoria }}" data-name="{{ produto.nome|lower }}">
-              <div class="menu-card-image"><span>{{ produto.emoji }}</span><span class="availability {% if produto.disponivel %}available{% else %}unavailable{% endif %}">{% if produto.disponivel %}Disponível{% else %}Indisponível{% endif %}</span></div>
-              <div class="menu-card-body"><div class="card-category">{{ produto.categoria }}</div><h2>{{ produto.nome }}</h2><p>{{ produto.descricao }}</p><footer><strong>R$ {{ produto.preco }}</strong><button type="button" aria-label="Editar {{ produto.nome }}">Editar</button></footer></div>
+            <article class="menu-card" data-category="{{ produto.category }}" data-name="{{ produto.name|lower }}">
+              <div class="menu-card-image"><span>{{ produto.icon }}</span><span class="availability {% if produto.is_available %}available{% else %}unavailable{% endif %}">{% if produto.is_available %}Disponível{% else %}Indisponível{% endif %}</span></div>
+              <div class="menu-card-body"><div class="card-category">{{ produto.category }}</div><h2>{{ produto.name }}</h2><p>{{ produto.description }}</p><footer><strong>R$ {{ produto.sale_price|floatformat:2 }}</strong><button type="button" aria-label="Editar {{ produto.name }}">Editar</button></footer></div>
             </article>
           {% endfor %}
         </section>
