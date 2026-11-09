@@ -15,13 +15,11 @@
         <nav>
           <a href="{% url 'core:home' %}">[ ] <span>Menu principal</span></a>
           <a href="{% url 'core:atendimento' %}">[+] <span>Atendimento</span></a>
-          {% if can_access_orders %}<a href="{% url 'core:pedidos' %}">[>] <span>Pedidos</span></a>{% endif %}
           <a href="{% url 'core:produtos' %}">[#] <span>Cardápio</span></a>
           {% if request.resolver_match.url_name != 'dashboard' %}<a href="{% url 'core:receitas' %}">[*] <span>Adicionar receitas</span></a>{% endif %}
            {% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">[+] <span>Desempenho cozinha</span></a>{% endif %}
           <a href="{% url 'core:relatorios' %}">[%] <span>Relatórios</span></a>
           {% if can_manage_staff %}<a href="{% url 'core:funcionarios' %}">[+] <span>Funcionários</span></a>{% endif %}
-          <a href="{% url 'core:configuracoes' %}">[=] <span>Configurações</span></a>
         </nav>
         <div class="sidebar-footer">
           {% if request.user.is_authenticated %}
@@ -36,7 +34,6 @@
       <div class="main-area">
         <header class="main-header">
           <h2>{% block header %}Painel{% endblock %}</h2>
-          <a class="home-return" href="{% url 'core:home' %}">← Voltar à Home</a>
         </header>
 
         <main class="container">

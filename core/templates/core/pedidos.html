@@ -34,9 +34,8 @@
           <details class="orders-page-nav">
             <summary>Navegação do sistema</summary>
             <div>
-              {% if not is_waiter %}<a href="{% url 'core:home' %}">Home</a>{% endif %}
+              <a href="{% url 'core:home' %}">Home</a>
               <a href="{% url 'core:atendimento' %}">Atendimento</a>
-              <a href="{% url 'core:pedidos' %}">Pedidos</a>
               {% if not is_waiter %}
                 <a href="{% url 'core:produtos' %}">Cardápio</a>
                 <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
@@ -45,8 +44,6 @@
               {% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}
               {% if can_manage_staff %}
                 <a href="{% url 'core:funcionarios' %}">Funcionários</a>
-                <a href="{% url 'core:clientes' %}">Clientes</a>
-                <a href="{% url 'core:configuracoes' %}">Configurações</a>
               {% endif %}
             </div>
           </details>
@@ -63,10 +60,9 @@
             <span>⌕</span>
             <input type="search" id="buscaProduto" placeholder="Buscar produtos..." aria-label="Buscar produtos">
           </div>
-          <a class="add-item-button orders-home-link" href="{% url 'core:home' %}">← Voltar à Home</a>
           <div class="usuario-box">
             <div class="usuario-avatar">{{ request.user.username|first|upper }}</div>
-            <div><strong>{{ request.user.username }}</strong><span>Administrador</span></div>
+            <div><strong>{{ request.user.username }}</strong><span>Garçom</span></div>
           </div>
         </header>
 
@@ -76,19 +72,19 @@
         </div>
 
         <section class="produtos-grid" id="produtosGrid">
-          <article class="produto-card" data-categoria="pizzas" data-nome="Pizza Calabresa"><div class="produto-image pizza-calabresa">🍕</div><div class="produto-info"><h3>Pizza Calabresa</h3><p>Calabresa, queijo e cebola</p><div class="produto-bottom"><strong>R$ 59,90</strong><button type="button" data-produto="Pizza Calabresa" data-preco="59.90" aria-label="Adicionar Pizza Calabresa">+</button></div></div></article>
-          <article class="produto-card" data-categoria="pizzas" data-nome="Pizza Marguerita"><div class="produto-image pizza-marguerita">🍕</div><div class="produto-info"><h3>Pizza Marguerita</h3><p>Queijo, tomate e manjericão</p><div class="produto-bottom"><strong>R$ 54,90</strong><button type="button" data-produto="Pizza Marguerita" data-preco="54.90" aria-label="Adicionar Pizza Marguerita">+</button></div></div></article>
-          <article class="produto-card" data-categoria="pizzas" data-nome="Frango com Catupiry"><div class="produto-image pizza-frango">🍕</div><div class="produto-info"><h3>Frango com Catupiry</h3><p>Frango, queijo e catupiry</p><div class="produto-bottom"><strong>R$ 62,90</strong><button type="button" data-produto="Frango com Catupiry" data-preco="62.90" aria-label="Adicionar Frango com Catupiry">+</button></div></div></article>
-          <article class="produto-card" data-categoria="pizzas" data-nome="Pizza Portuguesa"><div class="produto-image pizza-portuguesa">🍕</div><div class="produto-info"><h3>Pizza Portuguesa</h3><p>Presunto, ovos, queijo e cebola</p><div class="produto-bottom"><strong>R$ 61,90</strong><button type="button" data-produto="Pizza Portuguesa" data-preco="61.90" aria-label="Adicionar Pizza Portuguesa">+</button></div></div></article>
-          <article class="produto-card" data-categoria="lanches" data-nome="X-Bacon"><div class="produto-image lanche">🍔</div><div class="produto-info"><h3>X-Bacon</h3><p>Hambúrguer, bacon e queijo</p><div class="produto-bottom"><strong>R$ 34,90</strong><button type="button" data-produto="X-Bacon" data-preco="34.90" aria-label="Adicionar X-Bacon">+</button></div></div></article>
-          <article class="produto-card" data-categoria="lanches" data-nome="X-Salada"><div class="produto-image lanche">🍔</div><div class="produto-info"><h3>X-Salada</h3><p>Hambúrguer, queijo e salada</p><div class="produto-bottom"><strong>R$ 32,90</strong><button type="button" data-produto="X-Salada" data-preco="32.90" aria-label="Adicionar X-Salada">+</button></div></div></article>
-          <article class="produto-card" data-categoria="lanches" data-nome="X-Egg Bacon"><div class="produto-image lanche">🍔</div><div class="produto-info"><h3>X-Egg Bacon</h3><p>Hambúrguer, ovo, bacon e queijo</p><div class="produto-bottom"><strong>R$ 36,90</strong><button type="button" data-produto="X-Egg Bacon" data-preco="36.90" aria-label="Adicionar X-Egg Bacon">+</button></div></div></article>
-          <article class="produto-card" data-categoria="lanches" data-nome="Frango Grelhado"><div class="produto-image lanche">🍔</div><div class="produto-info"><h3>Frango Grelhado</h3><p>Frango, queijo e salada</p><div class="produto-bottom"><strong>R$ 31,90</strong><button type="button" data-produto="Frango Grelhado" data-preco="31.90" aria-label="Adicionar Frango Grelhado">+</button></div></div></article>
+          {% for product in products %}
+            <article class="produto-card" data-categoria="{{ product.category|lower }}" data-nome="{{ product.name|lower }}">
+              <div class="produto-image lanche"><span>{{ product.icon }}</span></div>
+              <div class="produto-info"><h3>{{ product.name }}</h3><p>{{ product.description }}</p><div class="produto-bottom"><strong>R$ {{ product.sale_price|floatformat:2 }}</strong><button type="button" data-product-id="{{ product.pk }}" data-produto="{{ product.name }}" data-preco="{{ product.sale_price }}" aria-label="Adicionar {{ product.name }}">+</button></div></div>
+            </article>
+          {% empty %}
+            <p>Nenhum produto disponível neste cardápio.</p>
+          {% endfor %}
         </section>
       </main>
 
       <aside class="pedido-lateral">
-        <div class="mesa-header"><div><span>MESA</span><h2>Mesa 05</h2></div><button type="button">Alterar mesa</button></div>
+        <div class="mesa-header"><label><span>MESA</span><input id="tableNumber" type="number" min="1" value="5" aria-label="Número da mesa"></label><input id="customerName" type="text" placeholder="Cliente (opcional)" aria-label="Nome do cliente"><input id="customerPhone" type="tel" placeholder="WhatsApp (opcional)" aria-label="WhatsApp do cliente"><select id="orderChannel" aria-label="Canal do pedido"><option value="presencial">Presencial</option><option value="delivery">Delivery</option></select></div>
         <div id="listaPedido" class="pedido-lista"><div class="pedido-vazio"><span>🧾</span><p>Nenhum item adicionado</p><small>Clique no + de algum produto</small></div></div>
         <div class="pedido-resumo">
           <div class="resumo-linha"><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div>
@@ -131,9 +127,10 @@
         const subtotal = pedido.reduce((sum, item) => sum + item.preco * item.quantidade, 0);
         const button = document.querySelector('#concluirPedido');
         button.disabled = true;
-        const response = await fetch('{% url "core:concluir_pedido" %}', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }, body: JSON.stringify({ items: pedido, subtotal, service_fee: subtotal * .1, total: subtotal * 1.1 }) });
-        if (response.ok) { alert('Pedido enviado para a administração.'); pedido.length = 0; atualizarPedido(); }
-        else { alert('Não foi possível concluir o pedido.'); }
+        const response = await fetch('{% url "core:concluir_pedido" %}', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }, body: JSON.stringify({ items: pedido, customer_name: document.querySelector('#customerName').value, customer_phone: document.querySelector('#customerPhone').value, channel: document.querySelector('#orderChannel').value, table_number: document.querySelector('#tableNumber').value }) });
+        const result = await response.json();
+        if (response.ok) { alert(result.message); pedido.length = 0; atualizarPedido(); }
+        else { alert(result.error || 'Não foi possível concluir o pedido.'); }
         button.disabled = false;
       });
     </script>

@@ -35,7 +35,7 @@ Para criar o primeiro administrador, execute `python manage.py createsuperuser`.
 ## Perfis
 
 - **Gestão/superusuário:** Home, atendimento, cardápio, receitas, relatórios e administração de funcionários. Algumas páginas legadas permanecem acessíveis por URL.
-- **Garçom:** entra inicialmente em Pedidos e pode voltar à Home limitada, que oferece somente Atendimento, Pedidos e Sair.
+- **Garçom:** após autenticar, abre diretamente a página Pedidos. Essa página não aparece como link em nenhuma outra tela e usuários de outros perfis não podem abri-la por URL.
 - **Cozinheiro:** grupo Django `Chefe de Cozinha`; pode registrar preparos e consultar desempenho da cozinha.
 - **Auxiliar de cozinha:** pode registrar preparos e consultar desempenho da cozinha.
 
@@ -55,7 +55,7 @@ As permissões são validadas nas views Django. A ocultação de links no HTML �
 | Relatórios | `/relatorios/` |
 | Funcionários | `/funcionarios/` |
 
-As páginas internas têm um retorno à Home. Na Home, a ação Sair encerra a sessão e retorna ao Login. O Dashboard legado continua em `/dashboard/` por compatibilidade, mas foi removido dos menus.
+As telas mantêm a navegação normal por menus, sem botões Voltar. Na Home, a ação Sair encerra a sessão e retorna ao Login. O Dashboard legado continua em `/dashboard/` por compatibilidade, mas foi removido dos menus.
 
 ## Testes e verificações
 

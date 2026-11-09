@@ -35,7 +35,7 @@
 }
 @media (max-width: 520px) {
   .kitchen-header-actions { align-items: stretch; flex-direction: column; }
-  .kitchen-entry > summary, .ops-back { text-align: center; }
+  .kitchen-entry > summary { text-align: center; }
   .kitchen-filter { flex-direction: column; }
   .kitchen-filter select, .kitchen-filter button { width: 100%; }
   .kitchen-panel { padding: 16px; }

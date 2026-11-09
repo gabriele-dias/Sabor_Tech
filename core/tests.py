@@ -64,6 +64,7 @@ class CoreAccessTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse('core:atendimento'))
+        self.assertNotContains(response, f'href="{reverse("core:pedidos")}"')
 
     def test_management_user_cannot_open_orders(self):
         user = User.objects.create_user(username='gestao', password='senha123')
@@ -73,7 +74,19 @@ class CoreAccessTests(TestCase):
 
         self.assertRedirects(response, reverse('core:home'))
 
-    def test_waiter_can_return_to_limited_home_but_not_management_pages(self):
+    def test_superuser_cannot_open_waiter_orders_page(self):
+        user = User.objects.create_superuser(
+            username='admin_sem_pedidos',
+            email='admin_sem_pedidos@sabor.test',
+            password='senha123',
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('core:pedidos'))
+
+        self.assertRedirects(response, reverse('core:home'))
+
+    def test_waiter_home_is_limited_and_management_pages_remain_blocked(self):
         user = User.objects.create_user(username='garcom_limitado', password='senha123')
         group, _ = Group.objects.get_or_create(name='Garçom')
         user.groups.add(group)
@@ -81,8 +94,8 @@ class CoreAccessTests(TestCase):
 
         home = self.client.get(reverse('core:home'))
         self.assertEqual(home.status_code, 200)
-        self.assertContains(home, reverse('core:pedidos'))
         self.assertContains(home, reverse('core:atendimento'))
+        self.assertNotContains(home, f'href="{reverse("core:pedidos")}"')
         self.assertNotContains(home, reverse('core:produtos'))
         self.assertNotContains(home, reverse('core:dashboard'))
 
@@ -307,7 +320,7 @@ class ServiceAndStaffViewTests(TestCase):
         self.client.force_login(administrator)
 
         for route_name in (
-            "home", "dashboard", "atendimento", "pedidos", "produtos",
+            "home", "dashboard", "atendimento", "produtos",
             "receitas", "relatorios", "funcionarios", "clientes", "configuracoes",
             "desempenho_cozinha",
         ):
@@ -316,6 +329,9 @@ class ServiceAndStaffViewTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, reverse("core:home"))
                 self.assertNotContains(response, f'href="{reverse("core:dashboard")}"')
+                self.assertNotContains(response, f'href="{reverse("core:clientes")}"')
+                self.assertNotContains(response, f'href="{reverse("core:configuracoes")}"')
+                self.assertNotContains(response, "Voltar")
 
 
 class KitchenPerformanceTests(TestCase):
@@ -430,9 +446,9 @@ class KitchenPerformanceTests(TestCase):
             with self.subTest(route_name=route_name):
                 self.assertContains(home, reverse(f"core:{route_name}"))
                 self.assertContains(kitchen, reverse(f"core:{route_name}"))
-        self.assertContains(kitchen, "Voltar à Home")
+        self.assertNotContains(kitchen, "Voltar")
 
-    def test_staff_pages_have_home_return(self):
+    def test_staff_page_has_home_navigation_without_back_button(self):
         manager = User.objects.create_user(username="staff_manager@sabor.test", password="senha123")
         management_group, _ = Group.objects.get_or_create(name="Gestão")
         manager.groups.add(management_group)
@@ -441,4 +457,4 @@ class KitchenPerformanceTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("core:home"))
-        self.assertContains(response, "Voltar à Home")
+        self.assertNotContains(response, "Voltar")

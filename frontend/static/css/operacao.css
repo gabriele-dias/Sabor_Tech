@@ -20,7 +20,6 @@ body { min-height: 100vh; color: #26383d; background: #f4f7f5; font-family: 'DM 
 .ops-eyebrow { margin: 0 0 9px; color: #09857e; font-size: .66rem; font-weight: 700; letter-spacing: .15rem; text-transform: uppercase; }
 .ops-header h1 { margin: 0; color: #1e353b; font-family: 'Space Grotesk', sans-serif; font-size: clamp(2rem, 4vw, 3rem); }
 .ops-header p:last-child { margin: 10px 0 0; color: #789095; }
-.ops-back { flex: 0 0 auto; border: 1px solid #d7e5e1; border-radius: 8px; padding: 10px 14px; color: #087f79; background: #fff; text-decoration: none; font-size: .76rem; font-weight: 700; }
 .ops-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
 .ops-stat { padding: 17px; border: 1px solid #e1eae7; border-radius: 12px; background: #fff; }
 .ops-stat span, .ops-stat small { display: block; color: #849397; font-size: .7rem; }

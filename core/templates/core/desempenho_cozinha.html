@@ -15,7 +15,6 @@
       <nav class="ops-nav" aria-label="Navegação principal">
         <a href="{% url 'core:home' %}">Home</a>
         <a href="{% url 'core:atendimento' %}">Atendimento</a>
-        {% if can_access_orders %}<a href="{% url 'core:pedidos' %}">Pedidos</a>{% endif %}
         <a href="{% url 'core:produtos' %}">Cardápio</a>
         <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
         <a class="active" href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>
@@ -41,7 +40,6 @@
               </form>
             </details>
           {% endif %}
-          <a class="ops-back" href="{% url 'core:home' %}">← Voltar à Home</a>
         </div>
       </header>
 

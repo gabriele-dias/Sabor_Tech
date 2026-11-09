@@ -14,7 +14,6 @@
       <nav class="ops-nav" aria-label="Navegação principal">
         <a href="{% url 'core:home' %}">Home</a>
         <a href="{% url 'core:atendimento' %}">Atendimento</a>
-        {% if can_access_orders %}<a href="{% url 'core:pedidos' %}">Pedidos</a>{% endif %}
         <a href="{% url 'core:produtos' %}">Cardápio</a>
         <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
         {% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}
@@ -27,7 +26,6 @@
     <main class="ops-main staff-main">
       <header class="ops-header">
         <div><p class="ops-eyebrow">ADMINISTRAÇÃO DA EQUIPE</p><h1>Novo funcionário</h1><p>Crie acessos para cada área do restaurante.</p></div>
-        <a class="ops-back" href="{% url 'core:home' %}">← Voltar à Home</a>
       </header>
 
       <section class="staff-panel">

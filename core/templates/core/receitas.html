@@ -1,28 +1,117 @@
 {% load static %}
 <!doctype html>
 <html lang="pt-br">
-  <head>
-    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Sabor Tech | Adicionar receita</title><link rel="stylesheet" href="{% static 'css/receitas.css' %}">
-  </head>
-  <body class="recipe-page">
-    <div class="recipe-shell">
-      <aside class="recipe-sidebar"><div class="recipe-brand"><span>+</span><div><strong>Sabor Tech</strong><small>GESTÃO INTELIGENTE</small></div></div><nav><a href="{% url 'core:home' %}">Home</a><a href="{% url 'core:atendimento' %}">Atendimento</a>{% if can_access_orders %}<a href="{% url 'core:pedidos' %}">Pedidos</a>{% endif %}<a href="{% url 'core:produtos' %}">Cardápio</a><a class="active" href="{% url 'core:receitas' %}">Adicionar receitas</a>{% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}<a href="{% url 'core:relatorios' %}">Relatórios</a>{% if can_manage_staff %}<a href="{% url 'core:funcionarios' %}">Funcionários</a>{% endif %}</nav><form method="post" action="{% url 'core:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form></aside>
-      <main class="recipe-main">
-        <header class="recipe-header"><div><p class="recipe-eyebrow">FICHA TÉCNICA</p><h1>Adicionar receita</h1><p>Cadastre os ingredientes e descubra o custo real de cada preparo.</p></div><a class="back-link" href="{% url 'core:home' %}">← Voltar à Home</a></header>
-        <form class="recipe-form" id="recipeForm">
-          <section class="recipe-panel"><div class="panel-heading"><span>01</span><div><h2>Informações da receita</h2><p>Comece identificando o prato.</p></div></div><div class="form-grid"><label>Nome da receita<input required name="name" placeholder="Ex.: Pizza Marguerita"></label><label>Categoria<select name="category"><option>Pizzas</option><option>Lanches</option><option>Massas</option><option>Bebidas</option><option>Sobremesas</option></select></label><label>Rendimento<input required name="yield" type="number" min="1" placeholder="Ex.: 4"><small>Porções</small></label><label>Tempo de preparo<input name="time" type="number" min="1" placeholder="Ex.: 35"><small>Minutos</small></label></div></section>
-          <section class="recipe-panel"><div class="panel-heading"><span>02</span><div><h2>Ingredientes</h2><p>Informe a quantidade e o custo de cada item.</p></div><button class="outline-button" type="button" id="addIngredient">+ Adicionar ingrediente</button></div><div class="ingredient-list" id="ingredientList"><div class="ingredient-row"><input required placeholder="Nome do ingrediente"><input required type="number" min="0" step="0.01" placeholder="Quantidade"><select><option>g</option><option>kg</option><option>ml</option><option>un.</option></select><input required type="number" min="0" step="0.01" placeholder="Custo (R$)"><button class="remove-ingredient" type="button" aria-label="Remover ingrediente">×</button></div></div></section>
-          <section class="recipe-panel recipe-summary"><div><p class="recipe-eyebrow">RESUMO DA RECEITA</p><h2>Pronto para cadastrar?</h2><p>Você poderá revisar os custos e atualizar essa ficha depois.</p></div><div class="summary-value"><span>Custo estimado</span><strong id="estimatedCost">R$ 0,00</strong></div><button class="primary-recipe-button" type="submit">Salvar receita <span>→</span></button></section>
-        </form>
-      </main>
-    </div>
-    <script>
-      const list = document.querySelector('#ingredientList'); const cost = document.querySelector('#estimatedCost');
-      function refreshCost() { const total = [...list.querySelectorAll('input[type="number"]')].filter((_, index) => index % 2 === 1).reduce((sum, input) => sum + Number(input.value || 0), 0); cost.textContent = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-      document.querySelector('#addIngredient').addEventListener('click', () => { const row = list.firstElementChild.cloneNode(true); row.querySelectorAll('input').forEach((input) => input.value = ''); list.appendChild(row); });
-      list.addEventListener('input', refreshCost); list.addEventListener('click', (event) => { if (event.target.classList.contains('remove-ingredient') && list.children.length > 1) event.target.closest('.ingredient-row').remove(); refreshCost(); });
-      document.querySelector('#recipeForm').addEventListener('submit', (event) => { event.preventDefault(); alert('Receita cadastrada com sucesso.'); });
-    </script>
-  </body>
-</html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sabor Tech | Adicionar receita</title>
+  <link rel="stylesheet" href="{% static 'css/receitas.css' %}">
+</head>
+<body class="recipe-page">
+  <div class="recipe-shell">
+    <aside class="recipe-sidebar">
+      <div class="recipe-brand"><span>+</span><div><strong>Sabor Tech</strong><small>GESTÃO INTELIGENTE</small></div></div>
+      <nav>
+        <a href="{% url 'core:home' %}">Home</a>
+        <a href="{% url 'core:atendimento' %}">Atendimento</a>
+        <a href="{% url 'core:produtos' %}">Cardápio</a>
+        <a class="active" href="{% url 'core:receitas' %}">Adicionar receitas</a>
+        {% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}
+        <a href="{% url 'core:relatorios' %}">Relatórios</a>
+        {% if can_manage_staff %}<a href="{% url 'core:funcionarios' %}">Funcionários</a>{% endif %}
+      </nav>
+      <form method="post" action="{% url 'core:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form>
+    </aside>
+
+    <main class="recipe-main">
+      <header class="recipe-header"><div><p class="recipe-eyebrow">FICHA TÉCNICA</p><h1>Adicionar receita</h1><p>Cadastre os ingredientes e calcule o custo real de cada preparo.</p></div></header>
+      {% if messages %}{% for message in messages %}<p class="form-messages">{{ message }}</p>{% endfor %}{% endif %}
+      <form class="recipe-form" id="recipeForm" method="post">
+        {% csrf_token %}
+        <section class="recipe-panel">
+          <div class="panel-heading"><span>01</span><div><h2>Produto e rendimento</h2><p>Os dados salvos também atualizam o Cardápio.</p></div></div>
+          {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+          <div class="form-grid">
+            <label>{{ form.name.label }}{{ form.name }}{{ form.name.errors }}</label>
+            <label>{{ form.category.label }}{{ form.category }}{{ form.category.errors }}</label>
+            <label>{{ form.sale_price.label }}{{ form.sale_price }}{{ form.sale_price.errors }}</label>
+            <label>{{ form.yield_quantity.label }}{{ form.yield_quantity }}{{ form.yield_quantity.errors }}</label>
+            <label>{{ form.prep_time_minutes.label }}{{ form.prep_time_minutes }}{{ form.prep_time_minutes.errors }}</label>
+            <label>{{ form.description.label }}{{ form.description }}{{ form.description.errors }}</label>
+          </div>
+        </section>
+
+        <section class="recipe-panel">
+          <div class="panel-heading"><span>02</span><div><h2>Ficha de insumos</h2><p>Use sempre a unidade base cadastrada para o ingrediente.</p></div><button class="outline-button" type="button" id="addIngredient">+ Adicionar ingrediente</button></div>
+          {{ ingredient_formset.management_form }}
+          {% for error in ingredient_formset.non_form_errors %}<p class="form-errors">{{ error }}</p>{% endfor %}
+          <div class="ingredient-list" id="ingredientList">
+            {% for line in ingredient_formset %}
+              <div class="ingredient-row" data-ingredient-row>
+                {{ line.id }}
+                <label>{{ line.name.label }}{{ line.name }}{{ line.name.errors }}</label>
+                <label>{{ line.quantity.label }}{{ line.quantity }}{{ line.quantity.errors }}</label>
+                <label>{{ line.unit.label }}{{ line.unit }}{{ line.unit.errors }}</label>
+                <label>{{ line.unit_cost.label }}{{ line.unit_cost }}{{ line.unit_cost.errors }}</label>
+                <span class="delete-field">{{ line.DELETE }}</span>
+                <button class="remove-ingredient" type="button" aria-label="Remover ingrediente">×</button>
+              </div>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="recipe-panel recipe-summary">
+          <div><p class="recipe-eyebrow">CUSTO DA FICHA</p><h2>Resumo calculado</h2><p>O custo considera a quantidade informada multiplicada pelo custo unitário de cada insumo.</p></div>
+          <div class="summary-value"><span>Custo estimado por receita</span><strong id="estimatedCost">R$ 0,00</strong></div>
+          <button class="primary-recipe-button" type="submit">Salvar receita <span>→</span></button>
+        </section>
+      </form>
+    </main>
+  </div>
+  <script>
+    const ingredientList = document.querySelector('#ingredientList');
+    const totalForms = document.querySelector('#id_ingredients-TOTAL_FORMS');
+    const costOutput = document.querySelector('#estimatedCost');
+    const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    function refreshRecipeCost() {
+      const total = [...ingredientList.querySelectorAll('[data-ingredient-row]')]
+        .filter((row) => !row.querySelector('input[type="checkbox"]').checked && row.style.display !== 'none')
+        .reduce((sum, row) => {
+          const quantity = Number(row.querySelector('[name$="-quantity"]').value || 0);
+          const unitCost = Number(row.querySelector('[name$="-unit_cost"]').value || 0);
+          return sum + quantity * unitCost;
+        }, 0);
+      costOutput.textContent = formatCurrency(total);
+    }
+
+    document.querySelector('#addIngredient').addEventListener('click', () => {
+      const rows = [...ingredientList.querySelectorAll('[data-ingredient-row]')];
+      const clone = rows[rows.length - 1].cloneNode(true);
+      const nextIndex = Number(totalForms.value);
+      clone.querySelectorAll('input, select').forEach((field) => {
+        field.name = field.name.replace(/ingredients-\d+-/, `ingredients-${nextIndex}-`);
+        field.id = field.id.replace(/ingredients-\d+-/, `ingredients-${nextIndex}-`);
+        if (field.type === 'checkbox') field.checked = false;
+        else if (field.type !== 'hidden') field.value = '';
+      });
+      clone.style.display = '';
+      ingredientList.appendChild(clone);
+      totalForms.value = String(nextIndex + 1);
+      refreshRecipeCost();
+    });
+
+    ingredientList.addEventListener('input', refreshRecipeCost);
+    ingredientList.addEventListener('change', refreshRecipeCost);
+    ingredientList.addEventListener('click', (event) => {
+      if (!event.target.classList.contains('remove-ingredient')) return;
+      const row = event.target.closest('[data-ingredient-row]');
+      const deleteField = row.querySelector('input[type="checkbox"]');
+      deleteField.checked = true;
+      row.style.display = 'none';
+      refreshRecipeCost();
+    });
+    refreshRecipeCost();
++  </script>
++</body>
++</html>

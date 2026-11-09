@@ -126,7 +126,7 @@ As rotas usam nomes Django. Templates devem preferir `{% url 'core:nome' %}` a c
 | `core:home` | `/home/` | Home administrativa ou Home limitada para garçons |
 | `core:home-root` | `/` | Alias da Home |
 | `core:dashboard` | `/dashboard/` | Dashboard legado, fora da navegação normal |
-| `core:pedidos` | `/pedidos/` | Catálogo para montar pedidos; superusuário e garçons |
+| `core:pedidos` | `/pedidos/` | Catálogo de pedidos, acessível somente ao grupo Garçom após autenticar |
 | `core:concluir_pedido` | `/pedidos/concluir/` | Recebe JSON via POST e persiste um pedido |
 | `core:atendimento` | `/atendimento/` | Acompanhamento de pedidos e mesas |
 | `core:desempenho_cozinha` | `/desempenho-cozinha/` | Registro e indicadores da produção da cozinha |
@@ -135,37 +135,25 @@ As rotas usam nomes Django. Templates devem preferir `{% url 'core:nome' %}` a c
 | `core:relatorios` | `/relatorios/` | Gráficos e análises operacionais |
 | `core:funcionarios` | `/funcionarios/` | Cadastro de contas e perfis de funcionários |
 | `core:funcionarios_novo` | `/funcionarios/novo/` | Alias do cadastro de funcionário |
-| `core:clientes` | `/clientes/` | Tela legada de clientes |
-| `core:configuracoes` | `/configuracoes/` | Tela legada de configurações |
+| `core:clientes` | `/clientes/` | Tela legada de clientes, sem atalho nos menus |
+| `core:configuracoes` | `/configuracoes/` | Tela legada de configurações, sem atalho nos menus |
 
 O item Dashboard foi removido dos menus e dos atalhos da Home. A rota permanece para compatibilidade enquanto telas, testes ou links antigos ainda possam referenciá-la. Não é um item da navegação cotidiana.
+Clientes e Configurações também foram retirados dos menus e permanecem acessíveis somente por URL legada.
 
-### Regra de retorno
+### Navegação por perfil
 
-- As telas internas expõem um botão `Voltar à Home` ou um link Home claramente visível.
-- A Home não precisa de botão de retorno; ela oferece `Sair` por formulário POST com token CSRF.
-- Pedidos mantém seu menu próprio por categorias. O cabeçalho inclui `Voltar à Home` e a sidebar oferece destinos compatíveis com o perfil.
-- A Home é acessível a garçons, mas mostra apenas Home, Atendimento, Pedidos e Sair; as views administrativas continuam protegidas.
-
-| Tela | Retorno esperado |
-|---|---|
-| Home | `Sair`, encerra sessão e abre Login |
-| Pedidos | `Voltar à Home` |
-| Atendimento | `Voltar à Home` |
-| Cardápio | `Voltar à Home` junto de Novo produto |
-| Adicionar receitas | `Voltar à Home` |
-| Desempenho cozinha | `Voltar à Home` |
-| Relatórios | `Voltar à Home` |
-| Novo funcionário | `Voltar à Home` |
-| Dashboard legado | `Voltar à Home` pelo layout compartilhado |
-| Clientes e Configurações | `Voltar à Home` pelo layout compartilhado |
-| Login | Não oferece Home autenticada; o redirect após login depende do perfil |
+- A tela Pedidos é aberta diretamente pelo redirect pós-login do grupo `Garçom`. Não há atalhos de navegação para ela nas demais páginas, e outros perfis são redirecionados se tentarem abrir sua URL.
+- A Home é acessível a garçons, mas apresenta somente Atendimento e Sair, além da navegação Home. As views administrativas continuam protegidas.
+- As telas internas mantêm seus links de navegação habituais, mas não apresentam botões ou links rotulados `Voltar`.
+- Na Home, `Sair` é um formulário POST com token CSRF que encerra a sessão e retorna ao Login.
+- Pedidos mantém as categorias do catálogo e acesso a Atendimento/Sair; não tem botão Voltar nem atalho próprio para a rota Pedidos.
 
 ## 6. Autenticação, grupos e permissões
 
 ### 6.1 Login
 
-`core/forms.py` define `CardapioLoginForm`, que altera rótulos e placeholders do formulário padrão Django. `RoleLoginView` em `core/views.py` usa esse formulário e direciona garçons para a tela de Pedidos. Outros usuários seguem o redirect padrão da autenticação.
+`core/forms.py` define `CardapioLoginForm`, que altera rótulos e placeholders do formulário padrão Django. `RoleLoginView` em `core/views.py` usa esse formulário e direciona garçons diretamente para a tela de Pedidos. Outros usuários seguem o redirect padrão da autenticação.
 
 O usuário precisa estar autenticado para acessar as views protegidas por `@login_required`.
 
@@ -321,7 +309,7 @@ Os templates em `core/templates/core/` definem o HTML e usam tags Django:
 - `base.html`: casca histórica compartilhada por Dashboard, Clientes e Configurações;
 - `_orders.html` e `_clients_list.html`: fragmentos legados de lista.
 
-A navegação pode variar por papel, mas cada página interna oferece retorno à Home. A tela especial de Pedidos mantém atalhos próprios sem expor links administrativos aos garçons.
+A navegação varia por papel e não há controles dedicados de retorno. A tela de Pedidos não é linkada nos menus; garçons chegam a ela pelo redirect pós-login.
 
 ## 11. CSS e responsividade
 
@@ -389,7 +377,7 @@ Os testes em `core/tests.py` cobrem:
 - renderização e filtros do Dashboard legado;
 - registro, métricas, duração e filtro da cozinha;
 - permissões de cadastro de funcionários;
-- links e retorno às telas.
+- links permitidos por perfil e ausência de controles `Voltar`.
 
 Testes usam banco temporário criado pelo Django; não gravam registros de validação no SQLite local.
 
@@ -402,7 +390,7 @@ Testes usam banco temporário criado pelo Django; não gravam registros de valid
 5. Criar o template em `core/templates/core/` e referenciar estáticos com `{% static %}`.
 6. Criar/atualizar CSS em `frontend/static/css/` seguindo o shell comum.
 7. Adicionar links condicionais nos menus relevantes, sempre com `{% url %}`.
-8. Incluir botão de retorno à Home nas telas internas; conservar Sair na Home.
+8. Manter links normais de navegação por perfil, sem controles `Voltar`; conservar Sair na Home.
 9. Criar testes de acesso, sucesso, validação, estado vazio e caminhos do menu.
 10. Executar `manage.py check`, os testes afetados e a suíte completa.
 11. Inspecionar diff e status para garantir que arquivos locais como `db.sqlite3` não entrem no commit.
@@ -491,11 +479,11 @@ Este inventário explica a responsabilidade dos arquivos de código atualmente p
 - `login.html`: formulário visual de login; recebe campos e erros da autenticação Django.
 - `home.html`: Home por perfil, navegação, cartões e logout POST. Para garçons apresenta apenas rotas de atendimento autorizadas.
 - `dashboard.html`: Dashboard administrativo histórico, acessível diretamente mas removido dos menus; ainda é usado por testes e por compatibilidade de pedidos recebidos.
-- `pedidos.html`: categorias, produtos, carrinho, taxa, total, POST JSON com CSRF, retorno Home e navegação recolhível.
+- `pedidos.html`: categorias, produtos, carrinho, taxa, total, POST JSON com CSRF e navegação recolhível; o login de garçom redireciona diretamente para essa página.
 - `atendimento.html`: indicadores e filtros dos pedidos, linhas da operação, mapa de mesas e links por grupo.
-- `produtos.html`: catálogo administrativo, pesquisa, filtro e ação Novo produto, além de retorno à Home.
+- `produtos.html`: catálogo administrativo, pesquisa e filtro; Home permanece na navegação normal.
 - `receitas.html`: formulário visual da ficha técnica, linhas dinâmicas de ingrediente e custo estimado; o cadastro ainda não grava modelo de receita.
-- `desempenho_cozinha.html`: resumo da produção, filtro por perfil, tabela persistida, retorno Home e formulário de preparo para cozinheiros/auxiliares.
+- `desempenho_cozinha.html`: resumo da produção, filtro por perfil, tabela persistida e formulário de preparo para cozinheiros/auxiliares.
 - `funcionarios.html`: formulário de criação de usuário, senha, e-mail e seleção de grupo; apresenta validação e mensagens.
 - `relatorios.html`: filtros, indicadores demonstrativos, gráficos Chart.js, mapa horário, análises demonstrativas e exportação/impressão.
 - `clientes.html`: tela legada com lista vazia porque não há modelo de Cliente ativo.
@@ -514,7 +502,7 @@ O settings ativo adiciona essa pasta a `TEMPLATES[0]['DIRS']`. Ela contém `base
 - `home.css`: shell e cartões da Home.
 - `dashboard.css`: estilos do Dashboard legado.
 - `pedidos.css`: layout de pedidos, categorias, catálogo e resumo lateral.
-- `cardapio.css`: catálogo administrativo e botão de retorno.
+- `cardapio.css`: catálogo administrativo.
 - `receitas.css`: ficha técnica e linhas de ingredientes.
 - `operacao.css`: sidebar e componentes comuns de Atendimento/Funcionários.
 - `desempenho.css`: tabela, filtros e formulário da equipe de cozinha.
