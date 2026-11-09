@@ -39,6 +39,8 @@ from .tenancy import membership_for_request
 
 class RoleLoginView(auth_views.LoginView):
     def get_success_url(self):
+        if is_kitchen_user(self.request.user):
+            return reverse('core:desempenho_cozinha')
         if is_waiter(self.request.user):
             return reverse('core:pedidos')
         return super().get_success_url()
@@ -57,7 +59,7 @@ def is_kitchen_user(user):
 
 
 def can_access_kitchen(user):
-    return can_manage_staff(user) or is_kitchen_user(user)
+    return is_kitchen_user(user)
 
 
 def redirect_waiter(request):
@@ -364,17 +366,35 @@ def atendimento(request):
 @login_required
 def desempenho_cozinha(request):
     kitchen_user = is_kitchen_user(request.user)
-    staff_admin = can_manage_staff(request.user)
-    if not kitchen_user and not staff_admin:
+    if not kitchen_user:
         waiter_redirect = redirect_waiter(request)
         if waiter_redirect:
             return waiter_redirect
         return redirect('core:home')
 
-    form = KitchenPreparationForm(request.POST or None)
     if request.method == 'POST':
         if not kitchen_user:
             return HttpResponseForbidden('Somente a equipe da cozinha pode registrar preparos.')
+
+        action = request.POST.get('action')
+        order_id = request.POST.get('order_id')
+        if action in {'confirm_order', 'ready_order'} and order_id:
+            order = get_object_or_404(Order, pk=order_id, tenant=current_membership(request).tenant)
+            if action == 'confirm_order':
+                if order.confirmed_at is None:
+                    order.confirmed_at = timezone.now()
+                if order.status in (Order.STATUS_PENDING, 'Pendente'):
+                    order.status = Order.STATUS_PREPARING
+                order.save(update_fields=['confirmed_at', 'status'])
+                messages.success(request, f'Pedido #{order.pk} confirmado e em preparo.')
+            elif action == 'ready_order':
+                order.status = Order.STATUS_READY
+                order.ready_at = order.ready_at or timezone.now()
+                order.save(update_fields=['status', 'ready_at'])
+                messages.success(request, f'Pedido #{order.pk} marcado como pronto.')
+            return redirect('core:desempenho_cozinha')
+
+        form = KitchenPreparationForm(request.POST or None)
         if form.is_valid():
             KitchenPreparation.objects.create(
                 responsible=request.user,
@@ -384,6 +404,8 @@ def desempenho_cozinha(request):
             )
             messages.success(request, 'Preparo registrado com sucesso.')
             return redirect('core:desempenho_cozinha')
+    else:
+        form = KitchenPreparationForm()
 
     today = timezone.localdate()
     today_preparations = KitchenPreparation.objects.filter(created_at__date=today)
@@ -407,8 +429,55 @@ def desempenho_cozinha(request):
         )
         preparation.status_class = slugify(preparation.status)
 
+    membership = current_membership(request)
+    orders = Order.objects.filter(tenant=membership.tenant).exclude(status__in=(Order.STATUS_CANCELLED, 'Entregue')).order_by('created_at') if membership else Order.objects.none()
+    kitchen_orders = []
+    for order in orders:
+        total_seconds = 0
+        if order.confirmed_at:
+            reference = order.ready_at or timezone.now()
+            total_seconds = max(0, (reference - order.confirmed_at).total_seconds())
+        if order.status == Order.STATUS_READY:
+            traffic_light = 'done'
+            elapsed_label = 'Pronto'
+            trend_label = 'Pedido concluído'
+        else:
+            if total_seconds < 20 * 60:
+                traffic_light = 'green'
+            elif total_seconds < 30 * 60:
+                traffic_light = 'yellow'
+            else:
+                traffic_light = 'red'
+            display_minutes, remainder = divmod(int(total_seconds), 60)
+            elapsed_label = f'{display_minutes:02d}:{remainder:02d}'
+            trend_label = 'Tempo dentro do esperado' if traffic_light == 'green' else 'Atenção ao tempo' if traffic_light == 'yellow' else 'Pedido atrasado'
+
+        item_lines = []
+        for item in order.items or []:
+            if not isinstance(item, dict):
+                continue
+            name = item.get('name') or item.get('product_name') or item.get('nome') or item.get('produto') or item.get('item') or 'Item'
+            quantity = item.get('quantity') or item.get('quantidade') or 1
+            item_lines.append(f'{quantity}x {name}')
+        if not item_lines:
+            item_lines.append('Pedido em andamento')
+
+        kitchen_orders.append({
+            'id': order.pk,
+            'status': order.status,
+            'status_class': slugify(order.status),
+            'traffic_light': traffic_light,
+            'elapsed_label': elapsed_label,
+            'trend_label': trend_label,
+            'customer': order.customer_name or order.waiter.get_full_name() or order.waiter.username,
+            'table_number': order.table_number,
+            'responsible': order.waiter.get_full_name() or order.waiter.username,
+            'items': item_lines,
+            'observation': order.items[0].get('observacao') if order.items and isinstance(order.items[0], dict) else '',
+        })
+
     return render(request, 'core/desempenho_cozinha.html', {
-        'can_manage_staff': staff_admin,
+        'can_manage_staff': can_manage_staff(request.user),
         'can_access_kitchen': True,
         'can_record_preparation': kitchen_user,
         'form': form,
@@ -418,6 +487,7 @@ def desempenho_cozinha(request):
         'active_cooks': User.objects.filter(is_active=True, groups__name='Chefe de Cozinha').distinct().count(),
         'active_assistants': User.objects.filter(is_active=True, groups__name='Auxiliar de cozinha').distinct().count(),
         'profile_filter': profile_filter,
+        'kitchen_orders': kitchen_orders,
     })
 
 

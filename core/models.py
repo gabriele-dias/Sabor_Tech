@@ -171,6 +171,8 @@ class Order(models.Model):
 	service_fee = models.DecimalField(max_digits=10, decimal_places=2)
 	total = models.DecimalField(max_digits=10, decimal_places=2)
 	status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+	confirmed_at = models.DateTimeField(null=True, blank=True)
+	ready_at = models.DateTimeField(null=True, blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 
 	class Meta:

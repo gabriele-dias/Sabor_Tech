@@ -322,7 +322,6 @@ class ServiceAndStaffViewTests(TestCase):
         for route_name in (
             "home", "dashboard", "atendimento", "produtos",
             "receitas", "relatorios", "funcionarios", "clientes", "configuracoes",
-            "desempenho_cozinha",
         ):
             with self.subTest(route_name=route_name):
                 response = self.client.get(reverse(f"core:{route_name}"))
@@ -424,6 +423,16 @@ class KitchenPerformanceTests(TestCase):
             ["Molho de tomate"],
         )
 
+    def test_cook_login_redirects_to_kitchen_dashboard(self):
+        self.client.logout()
+        response = self.client.post(
+            reverse("core:login"),
+            {"username": self.cook.email, "password": "senha123"},
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse("core:desempenho_cozinha"))
+
     def test_non_kitchen_user_is_redirected(self):
         waiter = User.objects.create_user(username="kitchen_waiter", password="senha123")
         waiter_group, _ = Group.objects.get_or_create(name="Garçom")
@@ -433,6 +442,18 @@ class KitchenPerformanceTests(TestCase):
         response = self.client.get(reverse("core:desempenho_cozinha"))
 
         self.assertRedirects(response, reverse("core:pedidos"))
+
+    def test_admin_user_is_blocked_from_cook_dashboard(self):
+        administrator = User.objects.create_superuser(
+            username="admin_cook_blocked@sabor.test",
+            email="admin_cook_blocked@sabor.test",
+            password="senha123",
+        )
+        self.client.force_login(administrator)
+
+        response = self.client.get(reverse("core:desempenho_cozinha"))
+
+        self.assertRedirects(response, reverse("core:home"))
 
     def test_home_and_kitchen_menus_omit_dashboard_and_expose_routes(self):
         home = self.client.get(reverse("core:home"))
