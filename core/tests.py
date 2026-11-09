@@ -443,6 +443,42 @@ class KitchenPerformanceTests(TestCase):
         self.assertNotContains(response, f'data-kitchen-timer="{order.pk}"')
         self.assertNotContains(response, f'data-kitchen-light="{order.pk}"')
 
+    def test_cook_profile_uses_full_width_layout_without_sidebar(self):
+        response = self.client.get(reverse("core:perfil_cozinheiro"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="kitchen-topbar"')
+        self.assertNotContains(response, 'class="kitchen-sidebar"')
+
+    def test_demo_orders_use_ten_second_yellow_and_twenty_second_red_thresholds(self):
+        green_order = self.create_kitchen_order(
+            customer_name="DEMO - Verde",
+            status=Order.STATUS_PREPARING,
+            confirmed_at=timezone.now() - timedelta(seconds=9),
+        )
+        yellow_order = self.create_kitchen_order(
+            customer_name="DEMO - Amarelo",
+            status=Order.STATUS_PREPARING,
+            confirmed_at=timezone.now() - timedelta(seconds=10),
+        )
+        red_order = self.create_kitchen_order(
+            customer_name="DEMO - Vermelho",
+            status=Order.STATUS_PREPARING,
+            confirmed_at=timezone.now() - timedelta(seconds=20),
+        )
+
+        response = self.client.get(reverse("core:perfil_cozinheiro"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'data-kitchen-timer="{green_order.pk}"')
+        self.assertContains(response, f'data-kitchen-timer="{yellow_order.pk}"')
+        self.assertContains(response, f'data-kitchen-timer="{red_order.pk}"')
+        self.assertContains(response, 'data-yellow-after-seconds="10"')
+        self.assertContains(response, 'data-red-after-seconds="20"')
+        self.assertContains(response, 'data-light="green"')
+        self.assertContains(response, 'data-light="yellow"')
+        self.assertContains(response, 'data-light="red"')
+
     def test_confirm_action_starts_order_timer_and_reports_feedback(self):
         order = self.create_kitchen_order()
 
@@ -677,9 +713,10 @@ class KitchenPerformanceTests(TestCase):
         for route_name in ("atendimento", "receitas", "perfil_cozinheiro", "relatorios"):
             with self.subTest(route_name=route_name):
                 self.assertContains(home, reverse(f"core:{route_name}"))
-        self.assertContains(kitchen, reverse("core:perfil_cozinheiro"))
+        self.assertContains(kitchen, 'class="kitchen-topbar"')
         self.assertNotContains(kitchen, reverse("core:home"))
         self.assertNotContains(kitchen, reverse("core:desempenho_cozinha"))
+        self.assertNotContains(kitchen, f'href="{reverse("core:perfil_cozinheiro")}"')
         self.assertNotContains(home, reverse("core:produtos"))
         self.assertNotContains(kitchen, reverse("core:produtos"))
         for route_name in ("atendimento", "receitas", "relatorios", "funcionarios"):

@@ -533,6 +533,9 @@ def perfil_cozinheiro(request):
     server_now = timezone.now()
     server_now_ms = int(server_now.timestamp() * 1000)
     for order in orders:
+        is_demo_order = order.customer_name.startswith('DEMO -')
+        yellow_after_seconds = 10 if is_demo_order else 20 * 60
+        red_after_seconds = 20 if is_demo_order else 30 * 60
         confirmed_at_ms = int(order.confirmed_at.timestamp() * 1000) if order.confirmed_at else None
         ready_at = order.ready_at or (server_now if order.status == Order.STATUS_READY else None)
         ready_at_ms = int(ready_at.timestamp() * 1000) if ready_at else None
@@ -548,10 +551,10 @@ def perfil_cozinheiro(request):
             if order.status == Order.STATUS_READY:
                 traffic_light = 'done'
                 trend_label = 'Pedido concluído'
-            elif total_seconds < 20 * 60:
+            elif total_seconds < yellow_after_seconds:
                 traffic_light = 'green'
                 trend_label = 'Tempo dentro do esperado'
-            elif total_seconds < 30 * 60:
+            elif total_seconds < red_after_seconds:
                 traffic_light = 'yellow'
                 trend_label = 'Atenção ao tempo'
             else:
@@ -588,6 +591,8 @@ def perfil_cozinheiro(request):
             'trend_label': trend_label,
             'confirmed_at_ms': confirmed_at_ms,
             'ready_at_ms': ready_at_ms,
+            'yellow_after_seconds': yellow_after_seconds,
+            'red_after_seconds': red_after_seconds,
             'priority': priority,
             'customer': order.customer_name or order.waiter.get_full_name() or order.waiter.username,
             'table_number': order.table_number,

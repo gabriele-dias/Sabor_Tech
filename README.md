@@ -60,6 +60,8 @@ As permissões são validadas nas views Django. A ocultação de links no HTML �
 
 O Perfil administrativo reúne Atendimento, Adicionar receitas, Desempenho da cozinha, Relatórios e Funcionários. Desempenho é restrito a Gestão/superusuário. O Perfil exclusivo do cozinheiro é a tela operacional de pedidos e cronômetro; administradores têm apenas consulta nessa tela.
 
+No painel do cozinheiro, pedidos cujo cliente começa com `DEMO -` usam limites acelerados para teste: amarelo aos 10 segundos e vermelho aos 20 segundos. Pedidos reais mantêm os limites de 20 e 30 minutos.
+
 ## Pedidos Prontos
 
 Quando a cozinha marca um pedido como pronto, ele passa a aparecer para os garçons em `/pedidos/prontos/`. O sino e o item **Pedidos Prontos** mostram a quantidade de pedidos que ainda aguardam retirada; a tela consulta o servidor a cada cinco segundos para atualizar contagem, cartões e avisos sem recarregar a página. O aviso sonoro não é usado.
