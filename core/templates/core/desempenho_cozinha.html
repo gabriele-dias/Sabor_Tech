@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sabor Tech | Cozinha</title>
+  <title>Sabor Tech | Perfil exclusivo do cozinheiro</title>
   <style>
     :root {
       --bg: #f5f7f9;
@@ -449,18 +449,19 @@
           <small>Gestão inteligente</small>
         </div>
       </div>
-      <div class="kitchen-profile-label">Perfil ativo<strong>{{ kitchen_profile_label }}</strong></div>
       <nav class="kitchen-actions" aria-label="Navegação principal">
         <a href="{% url 'core:home' %}">Home</a>
         {% if can_manage_staff %}
           <a href="{% url 'core:atendimento' %}">Atendimento</a>
           <a href="{% url 'core:produtos' %}">Cardápio</a>
           <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
-          <a class="active" href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>
+          <a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>
+          <a class="active" href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>
           <a href="{% url 'core:relatorios' %}">Relatórios</a>
           <a href="{% url 'core:funcionarios' %}">Funcionários</a>
         {% else %}
-          <a class="active" href="{% url 'core:desempenho_cozinha' %}">Minha cozinha</a>
+          <a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>
+          <a class="active" href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>
         {% endif %}
         <form method="post" action="{% url 'core:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form>
       </nav>
@@ -469,22 +470,9 @@
     <main class="kitchen-main">
     <header class="kitchen-header">
       <section class="header-card">
-        <p class="eyebrow">{{ kitchen_profile_label }}</p>
-        <h1>Desempenho da cozinha</h1>
-        {% if can_record_preparation %}<p>Acompanhe os pedidos em preparo, confirme a produção e finalize cada solicitação.</p>{% else %}<p>Acompanhe pedidos, preparos e indicadores da equipe da cozinha.</p>{% endif %}
-      </section>
-      <section class="header-card kitchen-entry">
-        {% if can_record_preparation %}
-          <form method="post" class="kitchen-entry-form">
-            {% csrf_token %}
-            <label>Preparo {{ form.dish_name }}{% if form.dish_name.errors %}<small class="form-errors">{{ form.dish_name.errors|join:", " }}</small>{% endif %}</label>
-            <label>Status {{ form.status }}{% if form.status.errors %}<small class="form-errors">{{ form.status.errors|join:", " }}</small>{% endif %}</label>
-            <label>Duração (min) {{ form.duration_minutes }}{% if form.duration_minutes.errors %}<small class="form-errors">{{ form.duration_minutes.errors|join:", " }}</small>{% endif %}</label>
-            <button type="submit">Salvar preparo</button>
-          </form>
-        {% else %}
-          <p>Ações de produção disponíveis somente para cozinheiros e auxiliares.</p>
-        {% endif %}
+        <p class="eyebrow">PAINEL OPERACIONAL</p>
+        <h1>Perfil exclusivo do cozinheiro</h1>
+        <p>Confirme os pedidos, acompanhe o tempo e marque como pronto.</p>
       </section>
     </header>
 
@@ -493,52 +481,6 @@
         <p class="form-messages">{{ message }}</p>
       {% endfor %}
     {% endif %}
-
-    <section class="ops-panel kitchen-panel" style="margin-bottom: 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 18px;">
-      <header class="kitchen-panel-heading" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom: 16px;">
-        <div>
-          <p class="ops-eyebrow" style="margin:0 0 8px; font-size:0.75rem; letter-spacing:0.12em; text-transform:uppercase; color: var(--muted);">Produção</p>
-          <h2 style="margin:0; font-size:1.5rem;">Preparos realizados</h2>
-        </div>
-        {% if can_record_preparation %}<button id="kitchenSoundToggle" class="kitchen-sound-toggle" type="button" aria-pressed="false">Ativar alerta sonoro</button>{% endif %}
-        <form method="get" class="kitchen-filter" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <select name="perfil" aria-label="Filtrar equipe da cozinha" style="border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:1rem;">
-            <option value="todos" {% if profile_filter == 'todos' %}selected{% endif %}>Todos da cozinha</option>
-            <option value="cozinheiros" {% if profile_filter == 'cozinheiros' %}selected{% endif %}>Cozinheiros</option>
-            <option value="auxiliares" {% if profile_filter == 'auxiliares' %}selected{% endif %}>Auxiliares</option>
-          </select>
-          <button type="submit" style="border:0; border-radius:10px; background: var(--dark); color:#fff; padding:10px 14px; font-weight:700; cursor:pointer;">Filtrar</button>
-        </form>
-      </header>
-      <div class="kitchen-table-wrap" style="overflow-x:auto;">
-        <table class="kitchen-table" style="width:100%; border-collapse:collapse;">
-          <thead>
-            <tr>
-              <th style="text-align:left; padding:12px 10px; border-bottom:1px solid var(--line);">Preparo</th>
-              <th style="text-align:left; padding:12px 10px; border-bottom:1px solid var(--line);">Responsável</th>
-              <th style="text-align:left; padding:12px 10px; border-bottom:1px solid var(--line);">Perfil</th>
-              <th style="text-align:left; padding:12px 10px; border-bottom:1px solid var(--line);">Horário</th>
-              <th style="text-align:left; padding:12px 10px; border-bottom:1px solid var(--line);">Duração</th>
-              <th style="text-align:left; padding:12px 10px; border-bottom:1px solid var(--line);">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for preparation in preparations %}
-              <tr>
-                <td style="padding:12px 10px; border-bottom:1px solid var(--line);">{{ preparation.dish_name }}</td>
-                <td style="padding:12px 10px; border-bottom:1px solid var(--line);">{{ preparation.responsible.get_full_name|default:preparation.responsible.username }}</td>
-                <td style="padding:12px 10px; border-bottom:1px solid var(--line);"><span class="kitchen-profile {{ preparation.profile_label|slugify }}">{{ preparation.profile_label }}</span></td>
-                <td style="padding:12px 10px; border-bottom:1px solid var(--line);">{{ preparation.created_label }}</td>
-                <td style="padding:12px 10px; border-bottom:1px solid var(--line);">{{ preparation.duration_label }}</td>
-                <td style="padding:12px 10px; border-bottom:1px solid var(--line);"><span class="kitchen-status {{ preparation.status_class }}">{{ preparation.status }}</span></td>
-              </tr>
-            {% empty %}
-              <tr><td colspan="6" style="padding:14px 10px; color: var(--muted);">Nenhum preparo registrado ainda. A equipe da cozinha pode incluir o primeiro preparo.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </section>
 
     <section class="kitchen-grid">
       {% for order in kitchen_orders %}
@@ -579,7 +521,7 @@
 
           <div class="meta-row">
             <span>Mesa {{ order.table_number|default:'--' }}</span>
-            <span>Responsável: {{ order.responsible }}</span>
+            <span>Garçom: {{ order.responsible }}</span>
           </div>
 
           {% if can_record_preparation %}<div class="card-actions">
@@ -590,7 +532,7 @@
                 {% csrf_token %}
                 <input type="hidden" name="order_id" value="{{ order.id }}">
                 <input type="hidden" name="action" value="{% if not order.confirmed_at_ms %}confirm_order{% else %}ready_order{% endif %}">
-                <button type="submit" class="{% if order.confirmed_at_ms and order.status == 'Em preparo' %}ready-button{% endif %}">{% if not order.confirmed_at_ms %}Confirmar pedido{% else %}Pedido pronto{% endif %}</button>
+                <button type="submit" class="{% if order.confirmed_at_ms and order.status == 'Em preparo' %}ready-button{% endif %}">{% if not order.confirmed_at_ms %}Confirmar pedido{% else %}Marcar como pronto{% endif %}</button>
               </form>
             {% endif %}
           </div>{% endif %}

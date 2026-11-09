@@ -34,7 +34,7 @@ class StaffCreateForm(forms.Form):
     PROFILE_CHOICES = (
         ("garcom", "Garçom"),
         ("administrador", "Administrador"),
-        ("cozinheiro", "Cozinheiro"),
+        ("cozinheiro", "Perfil exclusivo do cozinheiro"),
         ("auxiliar", "Auxiliar de cozinha"),
     )
 

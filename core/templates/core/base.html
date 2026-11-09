@@ -18,6 +18,7 @@
           {% if can_manage_staff %}<a href="{% url 'core:produtos' %}">[#] <span>Cardápio</span></a>{% endif %}
           {% if request.resolver_match.url_name != 'dashboard' %}<a href="{% url 'core:receitas' %}">[*] <span>Adicionar receitas</span></a>{% endif %}
            {% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">[+] <span>Desempenho cozinha</span></a>{% endif %}
+           {% if can_access_cook_profile %}<a href="{% url 'core:perfil_cozinheiro' %}">[+] <span>Perfil exclusivo do cozinheiro</span></a>{% endif %}
           <a href="{% url 'core:relatorios' %}">[%] <span>Relatórios</span></a>
           {% if can_manage_staff %}<a href="{% url 'core:funcionarios' %}">[+] <span>Funcionários</span></a>{% endif %}
         </nav>

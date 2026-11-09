@@ -34,10 +34,11 @@ Para criar o primeiro administrador, execute `python manage.py createsuperuser`.
 
 ## Perfis
 
-- **Gestão/superusuário:** Home, atendimento, cardápio, receitas, relatórios, consulta do desempenho da cozinha e administração de funcionários. O Cardápio é exclusivo deste perfil, inclusive por acesso direto à URL; no painel da cozinha, Gestão/superusuário tem acesso de leitura.
+- **Gestão/superusuário:** Home, atendimento, cardápio, receitas, relatórios, desempenho da cozinha e administração de funcionários. Pode consultar o perfil exclusivo do cozinheiro, sem operar pedidos.
 - **Garçom:** após autenticar, abre diretamente a página Pedidos. Essa página não aparece como link em nenhuma outra tela e usuários de outros perfis não podem abri-la por URL.
-- **Cozinheiro:** grupo Django `Chefe de Cozinha`; pode registrar preparos e consultar desempenho da cozinha.
-- **Auxiliar de cozinha:** pode registrar preparos e consultar desempenho da cozinha.
+- **Cozinheiro:** grupo Django `Chefe de Cozinha`; após o login, abre diretamente o Perfil exclusivo do cozinheiro e pode confirmar/finalizar pedidos.
+- **Auxiliar de cozinha:** consulta Desempenho da cozinha e pode registrar preparos; não acessa o perfil operacional exclusivo.
+- **Garçom:** não acessa o Perfil exclusivo do cozinheiro.
 
 As permissões são validadas nas views Django. A ocultação de links no HTML é apenas uma conveniência de navegação, não substitui autorização no servidor.
 
@@ -52,8 +53,11 @@ As permissões são validadas nas views Django. A ocultação de links no HTML �
 | Cardápio (somente Gestão/superusuário) | `/produtos/` |
 | Adicionar receitas | `/receitas/` |
 | Desempenho cozinha | `/desempenho-cozinha/` |
+| Perfil exclusivo do cozinheiro | `/perfil-cozinheiro/` |
 | Relatórios | `/relatorios/` |
 | Funcionários | `/funcionarios/` |
+
+Desempenho da cozinha é a tela de indicadores e histórico de preparos. O Perfil exclusivo do cozinheiro é a tela operacional de pedidos e cronômetro; o administrador, incluindo `gabriele@gmail.com` no banco local, tem somente consulta.
 
 O Cardápio lista os produtos da empresa ativa e oferece busca e filtro por categoria. O cadastro de um produto começa em Adicionar receitas, onde são informados os dados do produto, rendimento, tempo e ingredientes.
 

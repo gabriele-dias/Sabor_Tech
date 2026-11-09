@@ -24,6 +24,7 @@
           {% if can_manage_staff %}<a class="nav-item" href="{% url 'core:produtos' %}">Cardápio</a>{% endif %}
           {% if not is_waiter %}<a class="nav-item" href="{% url 'core:receitas' %}">Adicionar receitas</a>{% endif %}
           {% if can_access_kitchen %}<a class="nav-item" href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}
+          {% if can_access_cook_profile %}<a class="nav-item" href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>{% endif %}
           {% if not is_waiter %}<a class="nav-item" href="{% url 'core:relatorios' %}">Relatórios</a>{% endif %}
           {% if can_manage_staff %}<a class="nav-item" href="{% url 'core:funcionarios' %}">Funcionários</a>{% endif %}
           <form class="logout-form" method="post" action="{% url 'core:logout' %}">

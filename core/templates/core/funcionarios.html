@@ -17,6 +17,7 @@
         <a href="{% url 'core:produtos' %}">Cardápio</a>
         <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
         {% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}
+        {% if can_access_cook_profile %}<a href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>{% endif %}
         <a href="{% url 'core:relatorios' %}">Relatórios</a>
         <a class="active" href="{% url 'core:funcionarios' %}">Funcionários</a>
       </nav>
@@ -44,7 +45,7 @@
             {% for radio in form.profile %}
               <label class="role-option">
                 {{ radio.tag }}
-                <span><strong>{{ radio.choice_label }}</strong><small>{% if radio.data.value == 'garcom' %}Acessa somente Atendimento e Pedidos.{% elif radio.data.value == 'administrador' %}Acessa toda a gestão do restaurante.{% elif radio.data.value == 'cozinheiro' %}Acompanha a operação da cozinha.{% else %}Apoia os preparos e tarefas da cozinha.{% endif %}</small></span>
+                <span><strong>{{ radio.choice_label }}</strong><small>{% if radio.data.value == 'garcom' %}Acessa somente Atendimento e Pedidos.{% elif radio.data.value == 'administrador' %}Acessa toda a gestão do restaurante.{% elif radio.data.value == 'cozinheiro' %}Acessa exclusivamente o painel da cozinha e opera pedidos e preparos.{% else %}Apoia os preparos e tarefas da cozinha.{% endif %}</small></span>
               </label>
             {% endfor %}
           </div>

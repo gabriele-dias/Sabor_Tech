@@ -308,7 +308,8 @@ class ServiceAndStaffViewTests(TestCase):
 
         self.assertContains(response, "Acessa somente Atendimento e Pedidos.")
         self.assertContains(response, "Acessa toda a gestão do restaurante.")
-        self.assertContains(response, "Acompanha a operação da cozinha.")
+        self.assertContains(response, "Acessa exclusivamente o painel da cozinha e opera pedidos e preparos.")
+        self.assertContains(response, "Perfil exclusivo do cozinheiro")
         self.assertContains(response, "Apoia os preparos e tarefas da cozinha.")
 
     def test_non_management_user_cannot_open_staff_form(self):
@@ -344,7 +345,8 @@ class ServiceAndStaffViewTests(TestCase):
 
         for route_name in (
             "home", "dashboard", "atendimento", "produtos",
-            "receitas", "relatorios", "funcionarios", "clientes", "configuracoes",
+            "receitas", "desempenho_cozinha", "perfil_cozinheiro", "relatorios",
+            "funcionarios", "clientes", "configuracoes",
         ):
             with self.subTest(route_name=route_name):
                 response = self.client.get(reverse(f"core:{route_name}"))
@@ -395,12 +397,50 @@ class KitchenPerformanceTests(TestCase):
     def test_pending_order_has_no_traffic_light_or_timer(self):
         order = self.create_kitchen_order()
 
-        response = self.client.get(reverse("core:desempenho_cozinha"))
+        response = self.client.get(reverse("core:perfil_cozinheiro"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "O cronômetro e o farol iniciam após a confirmação.")
         self.assertNotContains(response, f'data-kitchen-timer="{order.pk}"')
         self.assertNotContains(response, f'data-kitchen-light="{order.pk}"')
+
+    def test_confirm_action_starts_order_timer_and_reports_feedback(self):
+        order = self.create_kitchen_order()
+
+        response = self.client.post(
+            reverse("core:perfil_cozinheiro"),
+            {"order_id": order.pk, "action": "confirm_order"},
+            follow=True,
+        )
+
+        order.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(order.status, Order.STATUS_PREPARING)
+        self.assertIsNotNone(order.confirmed_at)
+        self.assertContains(response, f"Pedido #{order.pk} confirmado. Cronômetro iniciado.")
+        self.assertContains(response, f'data-kitchen-timer="{order.pk}"')
+        self.assertContains(response, "Marcar como pronto")
+        self.assertContains(response, f"Garçom: {self.cook.get_full_name()}")
+
+    def test_ready_action_finishes_timer_and_reports_feedback(self):
+        order = self.create_kitchen_order(
+            status=Order.STATUS_PREPARING,
+            confirmed_at=timezone.now() - timedelta(minutes=5),
+        )
+
+        response = self.client.post(
+            reverse("core:perfil_cozinheiro"),
+            {"order_id": order.pk, "action": "ready_order"},
+            follow=True,
+        )
+
+        order.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(order.status, Order.STATUS_READY)
+        self.assertIsNotNone(order.ready_at)
+        self.assertContains(response, f"Pedido #{order.pk} marcado como pronto. Cronômetro finalizado.")
+        self.assertContains(response, 'data-light="done"')
+        self.assertNotContains(response, "Marcar como pronto")
 
     def test_confirmed_order_uses_server_timestamp_and_live_farol_threshold(self):
         green_order = self.create_kitchen_order(
@@ -416,7 +456,7 @@ class KitchenPerformanceTests(TestCase):
             confirmed_at=timezone.now() - timedelta(minutes=30),
         )
 
-        response = self.client.get(reverse("core:desempenho_cozinha"))
+        response = self.client.get(reverse("core:perfil_cozinheiro"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f'data-kitchen-timer="{green_order.pk}"')
@@ -442,7 +482,7 @@ class KitchenPerformanceTests(TestCase):
             ready_at=ready_at,
         )
 
-        response = self.client.get(reverse("core:desempenho_cozinha"))
+        response = self.client.get(reverse("core:perfil_cozinheiro"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f'data-kitchen-timer="{order.pk}"')
@@ -465,7 +505,7 @@ class KitchenPerformanceTests(TestCase):
         response = self.client.get(reverse("core:desempenho_cozinha"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Cozinheiro")
+        self.assertContains(response, "Desempenho da cozinha")
         self.assertContains(response, "Pizza Marguerita")
         self.assertContains(response, "Carlos Lima")
         self.assertContains(response, "Auxiliar de cozinha")
@@ -526,7 +566,7 @@ class KitchenPerformanceTests(TestCase):
             follow=True,
         )
 
-        self.assertRedirects(response, reverse("core:desempenho_cozinha"))
+        self.assertRedirects(response, reverse("core:perfil_cozinheiro"))
 
     def test_non_kitchen_user_is_redirected(self):
         waiter = User.objects.create_user(username="kitchen_waiter", password="senha123")
@@ -534,11 +574,19 @@ class KitchenPerformanceTests(TestCase):
         waiter.groups.add(waiter_group)
         self.client.force_login(waiter)
 
-        response = self.client.get(reverse("core:desempenho_cozinha"))
+        response = self.client.get(reverse("core:perfil_cozinheiro"))
 
         self.assertRedirects(response, reverse("core:pedidos"))
 
+    def test_auxiliary_cannot_open_cook_profile(self):
+        self.client.force_login(self.auxiliary)
+
+        response = self.client.get(reverse("core:perfil_cozinheiro"))
+
+        self.assertRedirects(response, reverse("core:home"))
+
     def test_admin_can_view_cook_dashboard_without_kitchen_actions(self):
+        order = self.create_kitchen_order()
         administrator = User.objects.create_superuser(
             username="admin_cook_blocked@sabor.test",
             email="admin_cook_blocked@sabor.test",
@@ -546,14 +594,18 @@ class KitchenPerformanceTests(TestCase):
         )
         self.client.force_login(administrator)
 
-        response = self.client.get(reverse("core:desempenho_cozinha"))
+        response = self.client.get(reverse("core:perfil_cozinheiro"))
 
         self.assertEqual(response.status_code, 200)
         home = self.client.get(reverse("core:home"))
-        self.assertContains(home, reverse("core:desempenho_cozinha"))
+        self.assertContains(home, reverse("core:perfil_cozinheiro"))
         self.assertFalse(response.context["can_record_preparation"])
-        self.assertContains(response, "Gestão · consulta")
-        self.assertContains(response, "Ações de produção disponíveis somente para cozinheiros e auxiliares.")
+        self.assertContains(response, "Perfil exclusivo do cozinheiro")
+        self.assertNotContains(response, "Perfil ativo")
+        self.assertNotContains(response, "Perfil visualizado")
+        self.assertNotContains(response, f'data-kitchen-light="{order.pk}"')
+        self.assertNotContains(response, "Confirmar pedido")
+        self.assertEqual(self.client.get(reverse("core:desempenho_cozinha")).status_code, 200)
 
     def test_admin_cannot_register_kitchen_preparation(self):
         administrator = User.objects.create_superuser(
@@ -564,7 +616,7 @@ class KitchenPerformanceTests(TestCase):
         self.client.force_login(administrator)
 
         response = self.client.post(
-            reverse("core:desempenho_cozinha"),
+            reverse("core:perfil_cozinheiro"),
             {"dish_name": "Preparo administrativo", "status": "Concluído", "duration_minutes": 10},
         )
 
@@ -573,17 +625,18 @@ class KitchenPerformanceTests(TestCase):
 
     def test_home_and_kitchen_menus_omit_dashboard_and_expose_routes(self):
         home = self.client.get(reverse("core:home"))
-        kitchen = self.client.get(reverse("core:desempenho_cozinha"))
+        kitchen = self.client.get(reverse("core:perfil_cozinheiro"))
 
         self.assertEqual(home.status_code, 200)
         self.assertEqual(kitchen.status_code, 200)
         self.assertNotContains(home, ">Dashboard<")
         self.assertNotContains(kitchen, ">Dashboard<")
-        for route_name in ("atendimento", "receitas", "desempenho_cozinha", "relatorios"):
+        for route_name in ("atendimento", "receitas", "desempenho_cozinha", "perfil_cozinheiro", "relatorios"):
             with self.subTest(route_name=route_name):
                 self.assertContains(home, reverse(f"core:{route_name}"))
         self.assertContains(kitchen, reverse("core:home"))
         self.assertContains(kitchen, reverse("core:desempenho_cozinha"))
+        self.assertContains(kitchen, reverse("core:perfil_cozinheiro"))
         self.assertNotContains(home, reverse("core:produtos"))
         self.assertNotContains(kitchen, reverse("core:produtos"))
         for route_name in ("atendimento", "receitas", "relatorios", "funcionarios"):

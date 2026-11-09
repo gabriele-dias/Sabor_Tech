@@ -17,6 +17,7 @@
         {% if can_manage_staff %}<a href="{% url 'core:produtos' %}">Cardápio</a>{% endif %}
         <a class="active" href="{% url 'core:receitas' %}">Adicionar receitas</a>
         {% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}
+        {% if can_access_cook_profile %}<a href="{% url 'core:perfil_cozinheiro' %}">Perfil exclusivo do cozinheiro</a>{% endif %}
         <a href="{% url 'core:relatorios' %}">Relatórios</a>
         {% if can_manage_staff %}<a href="{% url 'core:funcionarios' %}">Funcionários</a>{% endif %}
       </nav>
