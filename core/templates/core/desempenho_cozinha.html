@@ -30,61 +30,98 @@
       color: var(--dark);
     }
     .kitchen-layout {
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: 28px 18px 40px;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 236px minmax(0, 1fr);
     }
-    .kitchen-toolbar {
+    .kitchen-sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      min-height: 100vh;
+      min-width: 0;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 18px;
-      margin-bottom: 22px;
-      flex-wrap: wrap;
+      flex-direction: column;
+      padding: 30px 20px;
+      color: #fff;
+      background: #075f5c;
     }
     .kitchen-brand {
       display: flex;
       align-items: center;
       gap: 12px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      padding: 0 10px 24px;
+      border-bottom: 1px solid rgba(255,255,255,.16);
     }
     .brand-mark {
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
+      width: 40px;
+      height: 40px;
+      flex: 0 0 40px;
+      border-radius: 11px;
       display: grid;
       place-items: center;
-      background: linear-gradient(135deg, #1f9d8a, #164b63);
+      background: rgba(255,255,255,.12);
       color: #fff;
-      font-size: 1.5rem;
+      font-size: 1.35rem;
     }
+    .kitchen-brand strong,
     .kitchen-brand small {
       display: block;
-      font-size: 0.65rem;
-      letter-spacing: 0.18em;
-      color: var(--muted);
+    }
+    .kitchen-brand strong {
+      font-size: 1rem;
+      letter-spacing: .04em;
+    }
+    .kitchen-brand small {
+      margin-top: 4px;
+      color: rgba(255,255,255,.65);
+      font-size: .55rem;
+      letter-spacing: .12em;
+    }
+    .kitchen-profile-label {
+      margin: 20px 10px 0;
+      color: rgba(255,255,255,.66);
+      font-size: .7rem;
+    }
+    .kitchen-profile-label strong {
+      display: block;
+      margin-top: 5px;
+      color: #fff;
+      font-size: .85rem;
     }
     .kitchen-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
+      display: grid;
+      min-width: 0;
+      gap: 7px;
+      margin-top: 22px;
     }
     .kitchen-actions a,
     .kitchen-actions button {
       border: 0;
-      border-radius: 12px;
-      padding: 12px 16px;
-      background: var(--dark);
-      color: #fff;
+      border-radius: 9px;
+      padding: 12px 14px;
+      color: rgba(255,255,255,.72);
+      background: transparent;
       text-decoration: none;
-      font-weight: 700;
+      text-align: left;
+      font: inherit;
+      font-size: .84rem;
+      font-weight: 600;
       cursor: pointer;
     }
+    .kitchen-actions a:hover,
+    .kitchen-actions a.active {
+      color: #fff;
+      background: rgba(255,255,255,.13);
+    }
     .kitchen-actions form {
-      margin: 0;
+      margin-top: auto;
+    }
+    .kitchen-main {
+      width: 100%;
+      max-width: 1450px;
+      min-width: 0;
+      padding: 44px clamp(24px, 5vw, 70px);
     }
     .kitchen-header {
       display: grid;
@@ -175,6 +212,36 @@
       padding: 16px;
       display: grid;
       gap: 16px;
+    }
+    .kitchen-card.priority-red {
+      border-color: var(--red);
+      box-shadow: 0 0 0 2px var(--red-soft), var(--shadow);
+    }
+    .kitchen-card.priority-yellow {
+      border-color: var(--yellow);
+    }
+    .timer-pending {
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      color: var(--muted);
+      background: #f7fafc;
+      font-weight: 700;
+    }
+    .kitchen-sound-toggle {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--dark);
+      background: #fff;
+      font: inherit;
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .kitchen-sound-toggle[aria-pressed="true"] {
+      border-color: var(--green);
+      color: var(--green);
     }
     .card-header {
       display: flex;
@@ -319,12 +386,49 @@
         grid-template-columns: 1fr;
       }
     }
-    @media (max-width: 560px) {
+    @media (max-width: 980px) {
       .kitchen-layout {
-        padding: 18px 12px 30px;
+        grid-template-columns: 1fr;
       }
-      .kitchen-toolbar {
-        align-items: flex-start;
+      .kitchen-sidebar {
+        position: static;
+        height: auto;
+        min-height: auto;
+        padding: 18px 22px;
+      }
+      .kitchen-brand {
+        padding-bottom: 16px;
+      }
+      .kitchen-profile-label {
+        margin-top: 12px;
+      }
+      .kitchen-actions {
+        display: flex;
+        width: 100%;
+        overflow-x: auto;
+        margin-top: 14px;
+      }
+      .kitchen-actions a {
+        flex: 0 0 auto;
+        white-space: nowrap;
+      }
+      .kitchen-actions form {
+        display: none;
+      }
+      .kitchen-main {
+        padding: 32px 24px;
+      }
+    }
+    @media (max-width: 560px) {
+      .kitchen-sidebar {
+        padding: 16px;
+      }
+      .kitchen-actions a {
+        padding: 10px 11px;
+        font-size: .78rem;
+      }
+      .kitchen-main {
+        padding: 24px 16px;
       }
       .card-header {
         flex-direction: column;
@@ -337,7 +441,7 @@
 </head>
 <body>
   <div class="kitchen-layout">
-    <div class="kitchen-toolbar">
+    <aside class="kitchen-sidebar">
       <div class="kitchen-brand">
         <span class="brand-mark">+</span>
         <div>
@@ -345,23 +449,29 @@
           <small>Gestão inteligente</small>
         </div>
       </div>
-      <div class="kitchen-actions">
+      <div class="kitchen-profile-label">Perfil ativo<strong>{{ kitchen_profile_label }}</strong></div>
+      <nav class="kitchen-actions" aria-label="Navegação principal">
         <a href="{% url 'core:home' %}">Home</a>
-        <a href="{% url 'core:atendimento' %}">Atendimento</a>
-        <a href="{% url 'core:produtos' %}">Cardápio</a>
-        <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
-        <a class="active" href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>
-        <a href="{% url 'core:relatorios' %}">Relatórios</a>
-        {% if can_manage_staff %}<a href="{% url 'core:funcionarios' %}">Funcionários</a>{% endif %}
+        {% if can_manage_staff %}
+          <a href="{% url 'core:atendimento' %}">Atendimento</a>
+          <a href="{% url 'core:produtos' %}">Cardápio</a>
+          <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
+          <a class="active" href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>
+          <a href="{% url 'core:relatorios' %}">Relatórios</a>
+          <a href="{% url 'core:funcionarios' %}">Funcionários</a>
+        {% else %}
+          <a class="active" href="{% url 'core:desempenho_cozinha' %}">Minha cozinha</a>
+        {% endif %}
         <form method="post" action="{% url 'core:logout' %}">{% csrf_token %}<button type="submit">Sair</button></form>
-      </div>
-    </div>
+      </nav>
+    </aside>
 
+    <main class="kitchen-main">
     <header class="kitchen-header">
       <section class="header-card">
-        <p class="eyebrow">Painel operacional</p>
-        <h1>Cozinha</h1>
-        <p>Acompanhe os pedidos em preparo, confirme a produção e finalize cada solicitação em poucos segundos.</p>
+        <p class="eyebrow">{{ kitchen_profile_label }}</p>
+        <h1>Desempenho da cozinha</h1>
+        {% if can_record_preparation %}<p>Acompanhe os pedidos em preparo, confirme a produção e finalize cada solicitação.</p>{% else %}<p>Acompanhe pedidos, preparos e indicadores da equipe da cozinha.</p>{% endif %}
       </section>
       <section class="header-card kitchen-entry">
         {% if can_record_preparation %}
@@ -373,7 +483,7 @@
             <button type="submit">Salvar preparo</button>
           </form>
         {% else %}
-          <p>Sem ações de registro para este perfil.</p>
+          <p>Ações de produção disponíveis somente para cozinheiros e auxiliares.</p>
         {% endif %}
       </section>
     </header>
@@ -390,6 +500,7 @@
           <p class="ops-eyebrow" style="margin:0 0 8px; font-size:0.75rem; letter-spacing:0.12em; text-transform:uppercase; color: var(--muted);">Produção</p>
           <h2 style="margin:0; font-size:1.5rem;">Preparos realizados</h2>
         </div>
+        {% if can_record_preparation %}<button id="kitchenSoundToggle" class="kitchen-sound-toggle" type="button" aria-pressed="false">Ativar alerta sonoro</button>{% endif %}
         <form method="get" class="kitchen-filter" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
           <select name="perfil" aria-label="Filtrar equipe da cozinha" style="border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:1rem;">
             <option value="todos" {% if profile_filter == 'todos' %}selected{% endif %}>Todos da cozinha</option>
@@ -431,20 +542,24 @@
 
     <section class="kitchen-grid">
       {% for order in kitchen_orders %}
-        <article class="kitchen-card">
+        <article class="kitchen-card priority-{{ order.traffic_light }}">
           <div class="card-header">
             <div>
               <p class="card-order">Pedido #{{ order.id|stringformat:"03d" }}</p>
               <h2>{{ order.status }}</h2>
             </div>
-            <span class="traffic-light {{ order.traffic_light }}">{{ order.traffic_light|slice:":1" }}</span>
+            {% if order.confirmed_at_ms %}<span class="traffic-light {{ order.traffic_light }}" data-kitchen-light="{{ order.id }}" data-light="{{ order.traffic_light }}" aria-label="Farol {{ order.traffic_light }}">{{ order.traffic_light|slice:":1" }}</span>{% endif %}
           </div>
 
-          <div class="timer-box">
-            <span>Tempo de preparo</span>
-            <strong>{{ order.elapsed_label }}</strong>
-            <small>{{ order.trend_label }}</small>
-          </div>
+          {% if order.confirmed_at_ms %}
+            <div class="timer-box" data-kitchen-timer="{{ order.id }}" data-confirmed-at-ms="{{ order.confirmed_at_ms }}" data-ready-at-ms="{{ order.ready_at_ms|default_if_none:'' }}" data-server-now-ms="{{ server_now_ms }}">
+              <span>Tempo de preparo</span>
+              <strong data-elapsed-time>{{ order.elapsed_label }}</strong>
+              <small data-timer-trend>{{ order.trend_label }}</small>
+            </div>
+          {% else %}
+            <div class="timer-pending">O cronômetro e o farol iniciam após a confirmação.</div>
+          {% endif %}
 
           <div class="items-box">
             <h3>Itens do pedido</h3>
@@ -467,23 +582,101 @@
             <span>Responsável: {{ order.responsible }}</span>
           </div>
 
-          <div class="card-actions">
+          {% if can_record_preparation %}<div class="card-actions">
             {% if order.status == 'Pronto' %}
               <span class="status-pill ready">Pedido pronto</span>
             {% else %}
               <form method="post">
                 {% csrf_token %}
                 <input type="hidden" name="order_id" value="{{ order.id }}">
-                <input type="hidden" name="action" value="{% if order.status == 'Pendente' %}confirm_order{% else %}ready_order{% endif %}">
-                <button type="submit" class="{% if order.status == 'Em preparo' %}ready-button{% endif %}">{% if order.status == 'Pendente' %}Confirmar pedido{% else %}Pedido pronto{% endif %}</button>
+                <input type="hidden" name="action" value="{% if not order.confirmed_at_ms %}confirm_order{% else %}ready_order{% endif %}">
+                <button type="submit" class="{% if order.confirmed_at_ms and order.status == 'Em preparo' %}ready-button{% endif %}">{% if not order.confirmed_at_ms %}Confirmar pedido{% else %}Pedido pronto{% endif %}</button>
               </form>
             {% endif %}
-          </div>
+          </div>{% endif %}
         </article>
       {% empty %}
         <div class="empty-state">Nenhum pedido em preparo no momento. A fila da cozinha está livre.</div>
       {% endfor %}
     </section>
+    </main>
   </div>
+  <script>
+    (() => {
+      const timers = Array.from(document.querySelectorAll('[data-kitchen-timer]'));
+      const soundToggle = document.getElementById('kitchenSoundToggle');
+      let soundEnabled = false;
+      let audioContext = null;
+      const clientRenderedAt = Date.now();
+
+      function playAlert(state) {
+        if (!soundEnabled || !audioContext) return;
+        const tones = state === 'red' ? [880, 880] : [620];
+        tones.forEach((frequency, index) => {
+          const oscillator = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          const startAt = audioContext.currentTime + index * 0.22;
+          oscillator.frequency.value = frequency;
+          gain.gain.setValueAtTime(0.0001, startAt);
+          gain.gain.exponentialRampToValueAtTime(0.06, startAt + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.16);
+          oscillator.connect(gain);
+          gain.connect(audioContext.destination);
+          oscillator.start(startAt);
+          oscillator.stop(startAt + 0.17);
+        });
+      }
+
+      if (soundToggle) {
+        soundToggle.addEventListener('click', async () => {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) {
+            soundToggle.textContent = 'Som indisponível';
+            soundToggle.disabled = true;
+            return;
+          }
+          if (!audioContext) audioContext = new AudioContextClass();
+          await audioContext.resume();
+          soundEnabled = !soundEnabled;
+          soundToggle.setAttribute('aria-pressed', String(soundEnabled));
+          soundToggle.textContent = soundEnabled ? 'Desativar alerta sonoro' : 'Ativar alerta sonoro';
+        });
+      }
+
+      function updateKitchenTimers() {
+        timers.forEach((timer) => {
+          const startedAt = Number(timer.dataset.confirmedAtMs);
+          const readyAt = Number(timer.dataset.readyAtMs) || 0;
+          const serverNow = Number(timer.dataset.serverNowMs) + (Date.now() - clientRenderedAt);
+          const elapsedSeconds = Math.max(0, Math.floor(((readyAt || serverNow) - startedAt) / 1000));
+          const minutes = Math.floor(elapsedSeconds / 60);
+          const seconds = elapsedSeconds % 60;
+          const elapsed = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+          const state = readyAt ? 'done' : elapsedSeconds < 1200 ? 'green' : elapsedSeconds < 1800 ? 'yellow' : 'red';
+          const card = timer.closest('.kitchen-card');
+          const light = card.querySelector('[data-kitchen-light]');
+          const trend = timer.querySelector('[data-timer-trend]');
+          timer.querySelector('[data-elapsed-time]').textContent = readyAt ? `Pronto · ${elapsed}` : elapsed;
+          trend.textContent = state === 'done' ? 'Pedido concluído' : state === 'green' ? 'Tempo dentro do esperado' : state === 'yellow' ? 'Atenção ao tempo' : 'Pedido atrasado · prioridade';
+          card.classList.remove('priority-green', 'priority-yellow', 'priority-red', 'priority-done');
+          card.classList.add(`priority-${state}`);
+          if (light) {
+            const previousState = light.dataset.light;
+            light.classList.remove('green', 'yellow', 'red', 'done');
+            light.classList.add(state);
+            light.dataset.light = state;
+            light.textContent = state === 'done' ? '✓' : state === 'red' ? '!' : state === 'yellow' ? 'A' : 'G';
+            light.setAttribute('aria-label', state === 'done' ? 'Pedido pronto' : `Farol ${state}`);
+            if (state !== previousState && (state === 'yellow' || state === 'red')) playAlert(state);
+          }
+        });
+      }
+
+      updateKitchenTimers();
+      if (timers.some((timer) => !Number(timer.dataset.readyAtMs))) {
+        window.setInterval(updateKitchenTimers, 1000);
+      }
+    })();
+  </script>
 </body>
 </html>

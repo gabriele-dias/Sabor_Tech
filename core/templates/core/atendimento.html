@@ -14,7 +14,7 @@
       <nav class="ops-nav" aria-label="Navegação principal">
         <a href="{% url 'core:home' %}">Home</a>
         <a class="active" href="{% url 'core:atendimento' %}">Atendimento</a>
-        <a href="{% url 'core:produtos' %}">Cardápio</a>
+        {% if can_manage_staff %}<a href="{% url 'core:produtos' %}">Cardápio</a>{% endif %}
         <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
         {% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">Desempenho cozinha</a>{% endif %}
         <a href="{% url 'core:relatorios' %}">Relatórios</a>

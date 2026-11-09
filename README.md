@@ -34,7 +34,7 @@ Para criar o primeiro administrador, execute `python manage.py createsuperuser`.
 
 ## Perfis
 
-- **Gestão/superusuário:** Home, atendimento, cardápio, receitas, relatórios e administração de funcionários. Algumas páginas legadas permanecem acessíveis por URL.
+- **Gestão/superusuário:** Home, atendimento, cardápio, receitas, relatórios, consulta do desempenho da cozinha e administração de funcionários. O Cardápio é exclusivo deste perfil, inclusive por acesso direto à URL; no painel da cozinha, Gestão/superusuário tem acesso de leitura.
 - **Garçom:** após autenticar, abre diretamente a página Pedidos. Essa página não aparece como link em nenhuma outra tela e usuários de outros perfis não podem abri-la por URL.
 - **Cozinheiro:** grupo Django `Chefe de Cozinha`; pode registrar preparos e consultar desempenho da cozinha.
 - **Auxiliar de cozinha:** pode registrar preparos e consultar desempenho da cozinha.
@@ -49,11 +49,13 @@ As permissões são validadas nas views Django. A ocultação de links no HTML �
 | Home | `/home/` |
 | Pedidos | `/pedidos/` |
 | Atendimento | `/atendimento/` |
-| Cardápio | `/produtos/` |
+| Cardápio (somente Gestão/superusuário) | `/produtos/` |
 | Adicionar receitas | `/receitas/` |
 | Desempenho cozinha | `/desempenho-cozinha/` |
 | Relatórios | `/relatorios/` |
 | Funcionários | `/funcionarios/` |
+
+O Cardápio lista os produtos da empresa ativa e oferece busca e filtro por categoria. O cadastro de um produto começa em Adicionar receitas, onde são informados os dados do produto, rendimento, tempo e ingredientes.
 
 As telas mantêm a navegação normal por menus, sem botões Voltar. Na Home, a ação Sair encerra a sessão e retorna ao Login. O Dashboard legado continua em `/dashboard/` por compatibilidade, mas foi removido dos menus.
 

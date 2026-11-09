@@ -59,7 +59,7 @@ def is_kitchen_user(user):
 
 
 def can_access_kitchen(user):
-    return is_kitchen_user(user)
+    return can_manage_staff(user) or is_kitchen_user(user)
 
 
 def redirect_waiter(request):
@@ -197,6 +197,8 @@ def produtos(request):
     waiter_redirect = redirect_waiter(request)
     if waiter_redirect:
         return waiter_redirect
+    if not can_manage_staff(request.user):
+        return redirect('core:home')
     membership = current_membership(request)
     if membership is None:
         return redirect('core:home')
@@ -366,7 +368,13 @@ def atendimento(request):
 @login_required
 def desempenho_cozinha(request):
     kitchen_user = is_kitchen_user(request.user)
-    if not kitchen_user:
+    if request.user.groups.filter(name='Chefe de Cozinha').exists():
+        kitchen_profile_label = 'Cozinheiro'
+    elif kitchen_user:
+        kitchen_profile_label = 'Auxiliar de cozinha'
+    else:
+        kitchen_profile_label = 'Gestão · consulta'
+    if not can_access_kitchen(request.user):
         waiter_redirect = redirect_waiter(request)
         if waiter_redirect:
             return waiter_redirect
@@ -432,25 +440,44 @@ def desempenho_cozinha(request):
     membership = current_membership(request)
     orders = Order.objects.filter(tenant=membership.tenant).exclude(status__in=(Order.STATUS_CANCELLED, 'Entregue')).order_by('created_at') if membership else Order.objects.none()
     kitchen_orders = []
+    server_now = timezone.now()
+    server_now_ms = int(server_now.timestamp() * 1000)
     for order in orders:
-        total_seconds = 0
-        if order.confirmed_at:
-            reference = order.ready_at or timezone.now()
-            total_seconds = max(0, (reference - order.confirmed_at).total_seconds())
-        if order.status == Order.STATUS_READY:
-            traffic_light = 'done'
-            elapsed_label = 'Pronto'
-            trend_label = 'Pedido concluído'
+        confirmed_at_ms = int(order.confirmed_at.timestamp() * 1000) if order.confirmed_at else None
+        ready_at = order.ready_at or (server_now if order.status == Order.STATUS_READY else None)
+        ready_at_ms = int(ready_at.timestamp() * 1000) if ready_at else None
+        if not order.confirmed_at:
+            traffic_light = 'pending'
+            elapsed_label = ''
+            trend_label = 'Aguardando confirmação'
         else:
-            if total_seconds < 20 * 60:
+            reference = ready_at or server_now
+            total_seconds = max(0, int((reference - order.confirmed_at).total_seconds()))
+            display_minutes, remainder = divmod(total_seconds, 60)
+            elapsed_label = f'{display_minutes:02d}:{remainder:02d}'
+            if order.status == Order.STATUS_READY:
+                traffic_light = 'done'
+                trend_label = 'Pedido concluído'
+            elif total_seconds < 20 * 60:
                 traffic_light = 'green'
+                trend_label = 'Tempo dentro do esperado'
             elif total_seconds < 30 * 60:
                 traffic_light = 'yellow'
+                trend_label = 'Atenção ao tempo'
             else:
                 traffic_light = 'red'
-            display_minutes, remainder = divmod(int(total_seconds), 60)
-            elapsed_label = f'{display_minutes:02d}:{remainder:02d}'
-            trend_label = 'Tempo dentro do esperado' if traffic_light == 'green' else 'Atenção ao tempo' if traffic_light == 'yellow' else 'Pedido atrasado'
+                trend_label = 'Pedido atrasado · prioridade'
+
+        if traffic_light == 'red':
+            priority = 0
+        elif traffic_light == 'yellow':
+            priority = 1
+        elif traffic_light == 'green':
+            priority = 2
+        elif traffic_light == 'pending':
+            priority = 3
+        else:
+            priority = 4
 
         item_lines = []
         for item in order.items or []:
@@ -469,6 +496,9 @@ def desempenho_cozinha(request):
             'traffic_light': traffic_light,
             'elapsed_label': elapsed_label,
             'trend_label': trend_label,
+            'confirmed_at_ms': confirmed_at_ms,
+            'ready_at_ms': ready_at_ms,
+            'priority': priority,
             'customer': order.customer_name or order.waiter.get_full_name() or order.waiter.username,
             'table_number': order.table_number,
             'responsible': order.waiter.get_full_name() or order.waiter.username,
@@ -476,10 +506,13 @@ def desempenho_cozinha(request):
             'observation': order.items[0].get('observacao') if order.items and isinstance(order.items[0], dict) else '',
         })
 
+    kitchen_orders.sort(key=lambda order: order['priority'])
+
     return render(request, 'core/desempenho_cozinha.html', {
         'can_manage_staff': can_manage_staff(request.user),
         'can_access_kitchen': True,
         'can_record_preparation': kitchen_user,
+        'kitchen_profile_label': kitchen_profile_label,
         'form': form,
         'preparations': preparation_rows,
         'preparation_count': today_preparations.count(),
@@ -488,6 +521,7 @@ def desempenho_cozinha(request):
         'active_assistants': User.objects.filter(is_active=True, groups__name='Auxiliar de cozinha').distinct().count(),
         'profile_filter': profile_filter,
         'kitchen_orders': kitchen_orders,
+        'server_now_ms': server_now_ms,
     })
 
 

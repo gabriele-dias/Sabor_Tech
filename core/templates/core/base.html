@@ -15,7 +15,7 @@
         <nav>
           <a href="{% url 'core:home' %}">[ ] <span>Menu principal</span></a>
           <a href="{% url 'core:atendimento' %}">[+] <span>Atendimento</span></a>
-          <a href="{% url 'core:produtos' %}">[#] <span>Cardápio</span></a>
+          {% if can_manage_staff %}<a href="{% url 'core:produtos' %}">[#] <span>Cardápio</span></a>{% endif %}
           {% if request.resolver_match.url_name != 'dashboard' %}<a href="{% url 'core:receitas' %}">[*] <span>Adicionar receitas</span></a>{% endif %}
            {% if can_access_kitchen %}<a href="{% url 'core:desempenho_cozinha' %}">[+] <span>Desempenho cozinha</span></a>{% endif %}
           <a href="{% url 'core:relatorios' %}">[%] <span>Relatórios</span></a>

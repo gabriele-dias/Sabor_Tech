@@ -1,10 +1,12 @@
 from decimal import Decimal
+from datetime import timedelta
 from django.contrib.auth.models import Group, User
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 import json
 
-from .models import KitchenPreparation, Order
+from .models import KitchenPreparation, Order, Tenant, TenantMembership
 from .calculations import (
     calculate_custo_por_pessoa,
     calculate_custo_total,
@@ -73,6 +75,27 @@ class CoreAccessTests(TestCase):
         response = self.client.get(reverse('core:pedidos'))
 
         self.assertRedirects(response, reverse('core:home'))
+
+    def test_non_management_user_cannot_open_products(self):
+        user = User.objects.create_user(username='funcionario', password='senha123')
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('core:produtos'))
+
+        self.assertRedirects(response, reverse('core:home'))
+
+    def test_management_user_can_open_products(self):
+        user = User.objects.create_user(username='gestao_produtos', password='senha123')
+        management_group, _ = Group.objects.get_or_create(name='Gestão')
+        user.groups.add(management_group)
+        tenant = Tenant.objects.create(name='Restaurante Teste', slug='restaurante-teste')
+        TenantMembership.objects.create(tenant=tenant, user=user, role=TenantMembership.Role.MANAGER)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('core:produtos'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Cardápio')
 
     def test_superuser_cannot_open_waiter_orders_page(self):
         user = User.objects.create_superuser(
@@ -355,6 +378,77 @@ class KitchenPerformanceTests(TestCase):
         self.auxiliary.groups.add(self.auxiliary_group)
         self.client.force_login(self.cook)
 
+    def create_kitchen_order(self, **overrides):
+        membership = self.cook.tenant_memberships.filter(is_active=True, tenant__is_active=True).first()
+        self.assertIsNotNone(membership)
+        order_data = {
+            "waiter": self.cook,
+            "tenant": membership.tenant,
+            "items": [{"name": "Pizza Calabresa", "quantity": 2}],
+            "subtotal": Decimal("40.00"),
+            "service_fee": Decimal("0.00"),
+            "total": Decimal("40.00"),
+        }
+        order_data.update(overrides)
+        return Order.objects.create(**order_data)
+
+    def test_pending_order_has_no_traffic_light_or_timer(self):
+        order = self.create_kitchen_order()
+
+        response = self.client.get(reverse("core:desempenho_cozinha"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "O cronômetro e o farol iniciam após a confirmação.")
+        self.assertNotContains(response, f'data-kitchen-timer="{order.pk}"')
+        self.assertNotContains(response, f'data-kitchen-light="{order.pk}"')
+
+    def test_confirmed_order_uses_server_timestamp_and_live_farol_threshold(self):
+        green_order = self.create_kitchen_order(
+            status=Order.STATUS_PREPARING,
+            confirmed_at=timezone.now() - timedelta(minutes=19, seconds=59),
+        )
+        yellow_order = self.create_kitchen_order(
+            status=Order.STATUS_PREPARING,
+            confirmed_at=timezone.now() - timedelta(minutes=20),
+        )
+        red_order = self.create_kitchen_order(
+            status=Order.STATUS_PREPARING,
+            confirmed_at=timezone.now() - timedelta(minutes=30),
+        )
+
+        response = self.client.get(reverse("core:desempenho_cozinha"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'data-kitchen-timer="{green_order.pk}"')
+        self.assertContains(response, f'data-kitchen-timer="{yellow_order.pk}"')
+        self.assertContains(response, f'data-kitchen-timer="{red_order.pk}"')
+        self.assertContains(response, 'data-light="green"')
+        self.assertContains(response, 'data-light="yellow"')
+        self.assertContains(response, 'data-light="red"')
+        self.assertContains(response, "data-confirmed-at-ms=")
+        self.assertContains(response, "setInterval(updateKitchenTimers, 1000)")
+        response_body = response.content.decode()
+        self.assertLess(
+            response_body.index(f'data-kitchen-timer="{red_order.pk}"'),
+            response_body.index(f'data-kitchen-timer="{yellow_order.pk}"'),
+        )
+
+    def test_ready_order_timer_uses_saved_ready_timestamp(self):
+        confirmed_at = timezone.now() - timedelta(minutes=35)
+        ready_at = timezone.now() - timedelta(minutes=5)
+        order = self.create_kitchen_order(
+            status=Order.STATUS_READY,
+            confirmed_at=confirmed_at,
+            ready_at=ready_at,
+        )
+
+        response = self.client.get(reverse("core:desempenho_cozinha"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'data-kitchen-timer="{order.pk}"')
+        self.assertContains(response, 'data-light="done"')
+        self.assertContains(response, f'data-ready-at-ms="{int(ready_at.timestamp() * 1000)}"')
+
     def test_kitchen_view_shows_real_records_and_metrics(self):
         KitchenPreparation.objects.create(
             dish_name="Pizza Marguerita",
@@ -371,6 +465,7 @@ class KitchenPerformanceTests(TestCase):
         response = self.client.get(reverse("core:desempenho_cozinha"))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Cozinheiro")
         self.assertContains(response, "Pizza Marguerita")
         self.assertContains(response, "Carlos Lima")
         self.assertContains(response, "Auxiliar de cozinha")
@@ -443,7 +538,7 @@ class KitchenPerformanceTests(TestCase):
 
         self.assertRedirects(response, reverse("core:pedidos"))
 
-    def test_admin_user_is_blocked_from_cook_dashboard(self):
+    def test_admin_can_view_cook_dashboard_without_kitchen_actions(self):
         administrator = User.objects.create_superuser(
             username="admin_cook_blocked@sabor.test",
             email="admin_cook_blocked@sabor.test",
@@ -453,7 +548,28 @@ class KitchenPerformanceTests(TestCase):
 
         response = self.client.get(reverse("core:desempenho_cozinha"))
 
-        self.assertRedirects(response, reverse("core:home"))
+        self.assertEqual(response.status_code, 200)
+        home = self.client.get(reverse("core:home"))
+        self.assertContains(home, reverse("core:desempenho_cozinha"))
+        self.assertFalse(response.context["can_record_preparation"])
+        self.assertContains(response, "Gestão · consulta")
+        self.assertContains(response, "Ações de produção disponíveis somente para cozinheiros e auxiliares.")
+
+    def test_admin_cannot_register_kitchen_preparation(self):
+        administrator = User.objects.create_superuser(
+            username="admin_kitchen_post@sabor.test",
+            email="admin_kitchen_post@sabor.test",
+            password="senha123",
+        )
+        self.client.force_login(administrator)
+
+        response = self.client.post(
+            reverse("core:desempenho_cozinha"),
+            {"dish_name": "Preparo administrativo", "status": "Concluído", "duration_minutes": 10},
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(KitchenPreparation.objects.filter(dish_name="Preparo administrativo").exists())
 
     def test_home_and_kitchen_menus_omit_dashboard_and_expose_routes(self):
         home = self.client.get(reverse("core:home"))
@@ -463,10 +579,15 @@ class KitchenPerformanceTests(TestCase):
         self.assertEqual(kitchen.status_code, 200)
         self.assertNotContains(home, ">Dashboard<")
         self.assertNotContains(kitchen, ">Dashboard<")
-        for route_name in ("atendimento", "produtos", "receitas", "desempenho_cozinha", "relatorios"):
+        for route_name in ("atendimento", "receitas", "desempenho_cozinha", "relatorios"):
             with self.subTest(route_name=route_name):
                 self.assertContains(home, reverse(f"core:{route_name}"))
-                self.assertContains(kitchen, reverse(f"core:{route_name}"))
+        self.assertContains(kitchen, reverse("core:home"))
+        self.assertContains(kitchen, reverse("core:desempenho_cozinha"))
+        self.assertNotContains(home, reverse("core:produtos"))
+        self.assertNotContains(kitchen, reverse("core:produtos"))
+        for route_name in ("atendimento", "receitas", "relatorios", "funcionarios"):
+            self.assertNotContains(kitchen, reverse(f"core:{route_name}"))
         self.assertNotContains(kitchen, "Voltar")
 
     def test_staff_page_has_home_navigation_without_back_button(self):

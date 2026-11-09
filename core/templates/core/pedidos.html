@@ -36,8 +36,8 @@
             <div>
               <a href="{% url 'core:home' %}">Home</a>
               <a href="{% url 'core:atendimento' %}">Atendimento</a>
+              {% if can_manage_staff %}<a href="{% url 'core:produtos' %}">Cardápio</a>{% endif %}
               {% if not is_waiter %}
-                <a href="{% url 'core:produtos' %}">Cardápio</a>
                 <a href="{% url 'core:receitas' %}">Adicionar receitas</a>
                 <a href="{% url 'core:relatorios' %}">Relatórios</a>
               {% endif %}
